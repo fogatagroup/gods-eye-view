@@ -1,0 +1,130 @@
+/* Quantifeye World brand layer. Keep this import last so upstream component
+   layouts remain intact while the product identity stays centralized. */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm-plex-mono-400-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm-plex-mono-500-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+}
+
+:root {
+  --bg-dark: #050c16;
+  --glass-bg: rgba(7, 17, 31, 0.82);
+  --glass-border: rgba(60, 198, 255, 0.18);
+  --glass-border-hover: rgba(60, 198, 255, 0.42);
+  --accent: #3cc6ff;
+  --accent-dim: rgba(60, 198, 255, 0.14);
+  --accent-glow: rgba(60, 198, 255, 0.42);
+  --brand-success: #60d394;
+  --brand-ink: #07111f;
+  --brand-surface: #08111d;
+  --text-primary: #f8fafc;
+  --text-secondary: rgba(203, 213, 225, 0.72);
+  --text-dim: rgba(148, 163, 184, 0.5);
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at top, rgba(60, 198, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, #07111f 0%, #08111d 42%, #050c16 100%);
+}
+
+#title-bar h1 {
+  gap: 14px;
+  font-family: var(--font-sans);
+  letter-spacing: 0.18em;
+}
+
+#title-bar .title-logo {
+  width: 178px;
+  filter: drop-shadow(0 0 14px rgba(60, 198, 255, 0.28));
+}
+
+.brand-logo {
+  aspect-ratio: 254 / 60;
+}
+
+#title-bar .title-product {
+  padding-left: 14px;
+  color: var(--accent);
+  border-left: 1px solid rgba(60, 198, 255, 0.35);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 24px var(--accent-glow);
+}
+
+#title-bar .subtitle {
+  color: rgba(203, 213, 225, 0.52);
+  letter-spacing: 0.22em;
+}
+
+.loader-logo.quantifeye-icon {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+  filter: drop-shadow(0 0 28px rgba(60, 198, 255, 0.38));
+}
+
+.loader-logo.quantifeye-icon img {
+  width: 100%;
+  height: 100%;
+}
+
+.loader-content h2 {
+  font-family: var(--font-sans);
+  letter-spacing: 0.14em;
+}
+
+.loader-content .title-accent {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+#gev-voice-control[data-status='listening'] {
+  border-color: rgba(96, 211, 148, 0.5);
+}
+
+#gev-voice-control[data-status='listening'] #gev-voice-status {
+  color: var(--brand-success);
+}
+
+::selection {
+  color: #ffffff;
+  background: rgba(60, 198, 255, 0.28);
+}
+
+@media (max-width: 700px) {
+  #title-bar .title-logo {
+    width: 142px;
+  }
+
+  #title-bar .title-product {
+    padding-left: 9px;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+  }
+}

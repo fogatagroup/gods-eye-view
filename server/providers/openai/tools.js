@@ -3,7 +3,7 @@ const GEV_REALTIME_TOOLS = [
     type: 'function',
     name: 'fly_to_location',
     description:
-      "Fly the God's Eye View camera to a known city, geocoded country/region/city/landmark, or explicit WGS84 coordinate. Countries/cities frame the whole place; landmarks/buildings use close framing.",
+      'Fly the Quantifeye World camera to a known city, geocoded country/region/city/landmark, or explicit WGS84 coordinate. Countries/cities frame the whole place; landmarks/buildings use close framing.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -129,7 +129,8 @@ const GEV_REALTIME_TOOLS = [
   {
     type: 'function',
     name: 'set_layer_visibility',
-    description: "Enable or disable one registered God's Eye View data layer.",
+    description:
+      'Enable or disable one registered Quantifeye World data layer.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -196,7 +197,7 @@ const GEV_REALTIME_TOOLS = [
   {
     type: 'function',
     name: 'set_panel_open',
-    description: 'Open or close a GEV UI panel/dropdown.',
+    description: 'Open or close a Quantifeye World UI panel/dropdown.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -275,7 +276,7 @@ const GEV_REALTIME_TOOLS = [
   {
     type: 'function',
     name: 'set_visual_style',
-    description: "Set the active God's Eye View visual filter/style.",
+    description: 'Set the active Quantifeye World visual filter/style.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -300,7 +301,7 @@ const GEV_REALTIME_TOOLS = [
     type: 'function',
     name: 'get_entity_context',
     description:
-      'Get current GEV scene context, including basemap/3D-tile target context, selected entity metadata if active, and entities currently visible in the camera view.',
+      'Get current Quantifeye World scene context, including basemap/3D-tile target context, selected entity metadata if active, and entities currently visible in the camera view.',
     parameters: {
       type: 'object',
       additionalProperties: false,

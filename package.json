@@ -1,8 +1,8 @@
 {
-  "name": "gods-eye-view",
+  "name": "quantifeye-world",
   "private": true,
   "version": "0.1.1",
-  "description": "A real-time intelligence console for planet Earth \u2014 photorealistic 3D globe, live aircraft/ships/satellites/earthquakes/CCTV, and hands-free voice control. Runs in a browser.",
+  "description": "Quantifeye World \u2014 global operational intelligence with live geospatial context.",
   "type": "module",
   "license": "MIT",
   "author": "Bilawal Sidhu",
