@@ -5,6 +5,7 @@ import {
 import * as render from '../../renderGovernor.js';
 import * as context from '../../data/contextStore.js';
 import * as picking from '../../data/pickRegistry.js';
+import { overlayHost } from './overlayHost.js';
 
 /** Construct the three independently toggleable Panamá Oficial layers. */
 export function createApplicationPanamaOfficial({ source }) {
@@ -12,7 +13,7 @@ export function createApplicationPanamaOfficial({ source }) {
     createPanamaOfficialLayer({
       definition,
       source,
-      services: { render, context, picking },
+      services: { render, context, overlayHost, picking },
     }),
   );
 }

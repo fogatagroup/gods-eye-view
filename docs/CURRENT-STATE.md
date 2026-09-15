@@ -3383,6 +3383,10 @@ and retains only the documented public fields. Each layer refreshes every five
 minutes, keeps its last good snapshot visible on a transient failure, reports
 loading/stale/unavailable state through the normal Data Layers row, and supports
 selection cards with category, location, public contact and source provenance.
+On-map presentation follows the local infrastructure language: every record has
+a layer-colored elevated point, a matching vertical stem, and a collision-aware
+ambient card containing its bounded place name. Stem height scales with camera
+range so the point/line/card silhouette remains readable while zooming.
 The three visibility choices participate in v2 local/share state and are exposed
 to the voice layer controls. The endpoint is keyless; an alternate compatible
 base can be supplied with `VITE_PANAMA_OFFICIAL_API_URL`.

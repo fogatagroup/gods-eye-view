@@ -1,6 +1,11 @@
 import * as Cesium from 'cesium';
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const STEM_UPDATE_INTERVAL_MS = 300;
+const STEM_TARGET_PX = 65;
+const OVERLAY_COHORT_LIMIT = 160;
+const OVERLAY_COLLISION_CAPACITY = 96;
+const OVERLAY_MAX_DISTANCE_M = 14_000_000;
 
 export const PANAMA_OFFICIAL_LAYER_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -57,6 +62,57 @@ function categoryLabel(category) {
   return CATEGORY_LABELS[category] || 'Turismo';
 }
 
+export function panamaOfficialDisplayName(value) {
+  const text = String(value || '').trim();
+  return text.length > 34 ? `${text.slice(0, 31)}...` : text;
+}
+
+export function panamaOfficialStemHeight(
+  distance,
+  canvasHeight = 1080,
+  fov = Math.PI / 3,
+) {
+  const range = Math.max(1, Number(distance) || 1);
+  const height = Math.max(1, Number(canvasHeight) || 1080);
+  const fieldOfView = Number.isFinite(fov) ? fov : Math.PI / 3;
+  return range * 2 * Math.tan(fieldOfView / 2) * (STEM_TARGET_PX / height);
+}
+
+export function createPanamaOfficialOverlayEntry(
+  record,
+  definition,
+  position,
+  cullPosition,
+) {
+  return {
+    id: record.id,
+    position,
+    cullPosition,
+    variant: 'card',
+    title: panamaOfficialDisplayName(record.name),
+    details: [],
+    accent: definition.color,
+    priority: (record.verified ? 1200 : 1000) + (record.rating || 0),
+    collisionGroup: 'ambient-card',
+    zIndex: 30,
+    interactive: false,
+    minDistance: 0,
+    maxDistance: OVERLAY_MAX_DISTANCE_M,
+    distanceFadeStartRatio: 250_000 / OVERLAY_MAX_DISTANCE_M,
+    distanceScale: {
+      near: 250_000,
+      nearValue: 1,
+      far: 9_000_000,
+      farValue: 0.62,
+    },
+    edgeFade: 'keyhole',
+    horizonCull: true,
+    terrainOcclusion: false,
+    gapPx: 15,
+    placement: 'above',
+  };
+}
+
 function locationLine(record) {
   return [record.address, record.district, record.province]
     .filter((value, index, values) => value && values.indexOf(value) === index)
@@ -99,9 +155,12 @@ export function createPanamaOfficialLayer({
     throw new TypeError('A Panamá Oficial layer definition is required');
   if (typeof source?.getPlaces !== 'function')
     throw new TypeError('A Panamá Oficial source is required');
-  const { context, picking, render } = services || {};
+  const { context, overlayHost, picking, render } = services || {};
   if (
     !context?.registerEntityContext ||
+    !overlayHost?.setEntries ||
+    !overlayHost?.setVisible ||
+    !overlayHost?.clearSource ||
     !picking?.registerPickOwner ||
     !render?.governorRequestRender
   )
@@ -113,6 +172,7 @@ export function createPanamaOfficialLayer({
     dataSource: null,
     enabled: false,
     records: new Map(),
+    visuals: new Map(),
     selectedId: null,
     loading: false,
     stale: false,
@@ -121,7 +181,61 @@ export function createPanamaOfficialLayer({
     abort: null,
     clickHandler: null,
     contextSelectedHandler: null,
+    preRenderRemover: null,
+    lastStemUpdate: Number.NEGATIVE_INFINITY,
   };
+
+  function updateVisualGeometry(visual) {
+    if (!state.viewer || !visual) return;
+    const distance = Cesium.Cartesian3.distance(
+      state.viewer.camera.positionWC,
+      visual.base,
+    );
+    const canvasHeight =
+      state.viewer.scene.canvas.clientHeight ||
+      state.viewer.scene.canvas.height ||
+      1080;
+    const stemHeight = panamaOfficialStemHeight(
+      distance,
+      canvasHeight,
+      state.viewer.camera.frustum?.fov,
+    );
+    Cesium.Cartesian3.fromDegrees(
+      visual.longitude,
+      visual.latitude,
+      stemHeight,
+      Cesium.Ellipsoid.WGS84,
+      visual.tip,
+    );
+    visual.bufferIndex = 1 - visual.bufferIndex;
+    const stemPositions = visual.stemPositionBuffers[visual.bufferIndex];
+    stemPositions[0] = visual.base;
+    stemPositions[1] = visual.tip;
+    visual.entity.position.setValue(visual.tip);
+    visual.entity.polyline.positions.setValue(stemPositions);
+  }
+
+  function publishOverlayEntries() {
+    if (!state.enabled) return;
+    const entries = [];
+    for (const [id, visual] of state.visuals) {
+      const record = state.records.get(id);
+      if (!record) continue;
+      entries.push(
+        createPanamaOfficialOverlayEntry(
+          record,
+          definition,
+          () => visual.tip,
+          visual.base,
+        ),
+      );
+    }
+    overlayHost.setEntries(definition.id, entries, {
+      cohortLimit: OVERLAY_COHORT_LIMIT,
+      collisionCapacity: OVERLAY_COLLISION_CAPACITY,
+      moving: false,
+    });
+  }
 
   function styleEntity(entity, selected) {
     if (!entity?.point) return;
@@ -186,7 +300,10 @@ export function createPanamaOfficialLayer({
   function renderSnapshot(records) {
     const next = new Map(records.map((record) => [record.id, record]));
     for (const entity of [...state.dataSource.entities.values]) {
-      if (!next.has(entity.id)) state.dataSource.entities.remove(entity);
+      if (!next.has(entity.id)) {
+        state.dataSource.entities.remove(entity);
+        state.visuals.delete(entity.id);
+      }
     }
     context.removeEntityContextsForLayer(definition.id, {
       retainIds: new Set(next.keys()),
@@ -198,28 +315,54 @@ export function createPanamaOfficialLayer({
         record.latitude,
       );
       let entity = state.dataSource.entities.getById(record.id);
+      let visual = state.visuals.get(record.id);
       if (!entity) {
+        const base = position;
+        const tip = Cesium.Cartesian3.clone(base);
+        visual = {
+          entity: null,
+          longitude: record.longitude,
+          latitude: record.latitude,
+          base,
+          tip,
+          stemPositionBuffers: [
+            [base, tip],
+            [base, tip],
+          ],
+          bufferIndex: 0,
+        };
         entity = state.dataSource.entities.add({
           id: record.id,
           name: record.name,
-          position,
+          position: tip,
+          polyline: {
+            positions: visual.stemPositionBuffers[0],
+            width: 3.5,
+            material: color.withAlpha(0.92),
+          },
           point: {
             pixelSize: 10,
             color,
             outlineColor: Cesium.Color.BLACK.withAlpha(0.82),
             outlineWidth: 2,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
           },
         });
+        visual.entity = entity;
+        state.visuals.set(record.id, visual);
+        updateVisualGeometry(visual);
       } else {
         const previous = state.records.get(record.id);
         entity.name = record.name;
         if (
           previous?.longitude !== record.longitude ||
           previous?.latitude !== record.latitude
-        )
-          entity.position = position;
+        ) {
+          visual.longitude = record.longitude;
+          visual.latitude = record.latitude;
+          Cesium.Cartesian3.clone(position, visual.base);
+          updateVisualGeometry(visual);
+        }
       }
       entity.__panamaOfficialLayerId = definition.id;
       styleEntity(entity, record.id === state.selectedId);
@@ -228,6 +371,7 @@ export function createPanamaOfficialLayer({
     state.records = next;
     if (state.selectedId && !next.has(state.selectedId))
       state.selectedId = null;
+    publishOverlayEntries();
     render.governorRequestRender(`panama-official-data:${definition.id}`);
   }
 
@@ -274,6 +418,15 @@ export function createPanamaOfficialLayer({
       state.dataSource = new Cesium.CustomDataSource(definition.id);
       state.dataSource.show = false;
       viewer.dataSources.add(state.dataSource);
+      overlayHost.setVisible(definition.id, false);
+      state.preRenderRemover = viewer.scene.preRender.addEventListener(() => {
+        if (!state.enabled || !state.visuals.size) return;
+        const now = performance.now();
+        if (now - state.lastStemUpdate < STEM_UPDATE_INTERVAL_MS) return;
+        state.lastStemUpdate = now;
+        for (const visual of state.visuals.values())
+          updateVisualGeometry(visual);
+      });
       state.clickHandler = new Cesium.ScreenSpaceEventHandler(
         viewer.scene.canvas,
       );
@@ -301,6 +454,10 @@ export function createPanamaOfficialLayer({
     enable() {
       state.enabled = true;
       state.dataSource.show = true;
+      overlayHost.setVisible(definition.id, true);
+      state.lastStemUpdate = Number.NEGATIVE_INFINITY;
+      for (const visual of state.visuals.values()) updateVisualGeometry(visual);
+      publishOverlayEntries();
       picking.registerPickOwner(definition.id, (pickedId) =>
         state.records.has(pickedId),
       );
@@ -311,6 +468,8 @@ export function createPanamaOfficialLayer({
       state.abort = null;
       picking.unregisterPickOwner(definition.id);
       if (state.dataSource) state.dataSource.show = false;
+      overlayHost.clearSource(definition.id);
+      overlayHost.setVisible(definition.id, false);
       clearLocalSelection();
     },
     update: load,
@@ -318,6 +477,8 @@ export function createPanamaOfficialLayer({
       this.disable();
       state.clickHandler?.destroy();
       state.clickHandler = null;
+      state.preRenderRemover?.();
+      state.preRenderRemover = null;
       if (state.contextSelectedHandler)
         globalThis.window?.removeEventListener?.(
           'gev:entity-selected',
@@ -329,6 +490,7 @@ export function createPanamaOfficialLayer({
         viewer.dataSources.remove(state.dataSource, true);
       state.dataSource = null;
       state.records = new Map();
+      state.visuals = new Map();
       state.viewer = null;
     },
     getRowControls() {
