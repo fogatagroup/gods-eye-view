@@ -21,8 +21,9 @@ test('HUD sliders and location search have descriptive explicit names', () => {
   }
 });
 
-test('the first-run checkbox keeps its native visible label', () => {
-  assert.match(html, /<label\b[^>]*class="first-run-suppress"[^>]*>\s*<input type="checkbox" data-first-run-suppress \/>\s*<span>Don't show this again<\/span>\s*<\/label>/);
+test('the always-on first-run launcher offers no persistent suppression control', () => {
+  assert.doesNotMatch(html, /data-first-run-suppress|Don't show this again/);
+  assert.match(html, /<span>ESC to dismiss<\/span>/);
 });
 
 test('generated style sliders use the visible parameter label as their name', () => {

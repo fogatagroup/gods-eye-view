@@ -41,78 +41,24 @@ const FILES = {
 
 /** @type {Array<{defect: string, file: keyof FILES, from: string, to: string}>} */
 const MUTATIONS = [
-  // ── Show policy (owner ruling: session-scoped dismiss vs durable checkbox) ──
+  // ── Show policy (owner ruling: visible on every page load) ─────────────────
   {
-    defect: 'dismissing writes the DURABLE key, so the launcher never returns',
+    defect: 'the launcher stops returning on ordinary page loads',
     file: 'module',
-    from: "writeStored('session', sessionStorageRef, FIRST_RUN_SESSION_KEY, 'dismissed');",
-    to: "writeStored('local', sessionStorageRef, FIRST_RUN_STORAGE_KEY, 'suppressed');",
+    from: "return params.get('welcome') !== '0';",
+    to: "return params.get('welcome') === '1';",
   },
   {
-    defect: 'the checkbox is ignored, so nothing can ever suppress the launcher',
+    defect: '?welcome=0 stops suppressing special page loads',
     file: 'module',
-    from: "    ? writeStored('local', storage, FIRST_RUN_STORAGE_KEY, 'suppressed')",
-    to: '    ? false',
+    from: "return params.get('welcome') !== '0';",
+    to: 'return true;',
   },
   {
-    defect: 'unticking the box cannot take the suppression back',
+    defect: 'shared views silently regain the old launcher bypass',
     file: 'module',
-    from: "    : removeStored('local', storage, FIRST_RUN_STORAGE_KEY);",
-    to: '    : true;',
-  },
-  {
-    defect: 'the session flag is never read, so it re-nags on every reload',
-    file: 'module',
-    from: "if (readStored('session', sessionStorageRef, FIRST_RUN_SESSION_KEY) === 'dismissed') return false;",
-    to: '// session check removed',
-  },
-  {
-    defect: 'the durable flag is never read, so the checkbox does nothing',
-    file: 'module',
-    from: "if (readStored('local', storage, FIRST_RUN_STORAGE_KEY) === 'suppressed') return false;",
-    to: '// durable check removed',
-  },
-  {
-    defect: '?welcome=1 no longer outranks suppression, so demos cannot replay it',
-    file: 'module',
-    from: "if (params.get('welcome') === '1') return true;",
-    to: '// replay hatch removed',
-  },
-  {
-    defect: '?welcome=0 stops suppressing',
-    file: 'module',
-    from: "if (params.get('welcome') === '0') return false;",
-    to: '// suppression param removed',
-  },
-  {
-    defect: 'a share link gets the launcher over the view its author chose',
-    file: 'module',
-    from: 'if (hasShareState) return false;',
-    to: '// share bypass removed',
-  },
-  {
-    defect: 'storage is read from a DEFAULT PARAMETER, outside every guard',
-    file: 'module',
-    from: 'export function rememberFirstRunSessionDismissed(sessionStorageRef) {',
-    to: 'export function rememberFirstRunSessionDismissed(sessionStorageRef = globalThis.sessionStorage) {',
-  },
-  {
-    defect: 'shouldShowFirstRun resolves storage in its parameter list again',
-    file: 'module',
-    from: 'export function shouldShowFirstRun({\n  hasShareState = false,\n  storage,\n  sessionStorageRef,',
-    to: 'export function shouldShowFirstRun({\n  hasShareState = false,\n  storage = globalThis.localStorage,\n  sessionStorageRef = globalThis.sessionStorage,',
-  },
-  {
-    defect: 'the guarded resolver stops catching, so a hostile getter escapes',
-    file: 'module',
-    from: "  try {\n    return kind === 'session' ? globalThis.sessionStorage : globalThis.localStorage;\n  } catch {\n    // Privacy-restricted storage should not make first launch silent.\n    return null;\n  }",
-    to: "  return kind === 'session' ? globalThis.sessionStorage : globalThis.localStorage;",
-  },
-  {
-    defect: 'a blocked getItem throws instead of reading as "nothing stored"',
-    file: 'module',
-    from: '    return resolveStore(kind, injected)?.getItem?.(key) ?? null;\n  } catch {\n    return null;\n  }',
-    to: '    return resolveStore(kind, injected)?.getItem?.(key) ?? null;\n  } finally {\n    // no catch\n  }',
+    from: 'export function shouldShowFirstRun({ location = globalThis.location } = {}) {',
+    to: 'export function shouldShowFirstRun({ hasShareState = false, location = globalThis.location } = {}) {\n  if (hasShareState) return false;',
   },
 
   // ── ESC arbitration ───────────────────────────────────────────────────────
@@ -197,19 +143,7 @@ const MUTATIONS = [
     to: 'the launcher always turns up eventually for that page',
   },
 
-  // ── The checkbox may not promise what storage refused ─────────────────────
-  {
-    defect: 'a refused write leaves the box ticked, promising a suppression nobody stored',
-    file: 'module',
-    from: '    if (setFirstRunSuppressed(wanted, storage)) return;',
-    to: '    setFirstRunSuppressed(wanted, storage);\n    return;',
-  },
-  {
-    defect: 'a missing storage area reports the write as saved',
-    file: 'module',
-    from: "    if (typeof store?.setItem !== 'function') return false;\n    store.setItem(key, value);\n    return true;",
-    to: '    store?.setItem?.(key, value);\n    return true;',
-  },
+  // ── Viewport affordances ─────────────────────────────────────────────────
   {
     defect: 'the scroll fade promises more list on a card where everything fits',
     file: 'module',
@@ -421,10 +355,10 @@ const MUTATIONS = [
     to: '<button type="button" data-first-run-choice="zzz-environmental">',
   },
   {
-    defect: 'the "don\'t show again" checkbox is removed',
+    defect: 'a persistent suppression control contradicts the every-refresh policy',
     file: 'html',
-    from: '<input type="checkbox" data-first-run-suppress />',
-    to: '<span data-first-run-suppress-removed></span>',
+    from: '<span>ESC to dismiss</span>',
+    to: '<input type="checkbox" data-first-run-suppress /><span>Don\'t show this again</span>',
   },
   {
     defect: 'the status line stops being a polite live region',

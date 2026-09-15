@@ -9,124 +9,34 @@ import {
   ENVIRONMENTAL_LABEL_CHOICE,
   EXCLUSIVE_SURFACE_CLASSES,
   FIRST_RUN_MISSIONS,
-  FIRST_RUN_SESSION_KEY,
-  FIRST_RUN_STORAGE_KEY,
   environmentalLabel,
   exclusiveSurfaceActive,
-  rememberFirstRunSessionDismissed,
   runFirstRunChoice,
-  setFirstRunSuppressed,
   shouldShowFirstRun,
 } from './firstRunExperience.js';
 
-function memoryStorage(key, value = null) {
-  const values = new Map(value == null ? [] : [[key, value]]);
-  return {
-    getItem: (name) => values.get(name) ?? null,
-    setItem: (name, next) => values.set(name, next),
-    removeItem: (name) => values.delete(name),
-    read: () => values.get(key) ?? null,
-  };
-}
-
-const fresh = () => ({
-  storage: memoryStorage(FIRST_RUN_STORAGE_KEY),
-  sessionStorageRef: memoryStorage(FIRST_RUN_SESSION_KEY),
-  location: { search: '' },
-});
-
 // ── Show policy ──────────────────────────────────────────────────────────────
 
-test('a fresh session receives the launcher, and keeps receiving it', () => {
-  assert.equal(shouldShowFirstRun(fresh()), true);
-  // Not one-shot: a previous session's completion does not suppress a new one.
-  const returning = fresh();
-  returning.sessionStorageRef = memoryStorage(FIRST_RUN_SESSION_KEY);
-  assert.equal(shouldShowFirstRun(returning), true);
-});
-
-test('dismissal is session-scoped; only the checkbox suppresses durably', () => {
-  const session = memoryStorage(FIRST_RUN_SESSION_KEY);
-  const storage = memoryStorage(FIRST_RUN_STORAGE_KEY);
-
-  rememberFirstRunSessionDismissed(session);
-  assert.equal(session.read(), 'dismissed');
-  // Gone for THIS session...
-  assert.equal(shouldShowFirstRun({ storage, sessionStorageRef: session, location: { search: '' } }), false);
-  // ...and back in the next one, because sessionStorage did not survive it.
-  assert.equal(shouldShowFirstRun({
-    storage,
-    sessionStorageRef: memoryStorage(FIRST_RUN_SESSION_KEY),
-    location: { search: '' },
-  }), true);
-  // Session dismissal must never have written the durable key.
-  assert.equal(storage.read(), null);
-});
-
-test('the checkbox writes and clears durable suppression, and a storage reset undoes it', () => {
-  const storage = memoryStorage(FIRST_RUN_STORAGE_KEY);
-  setFirstRunSuppressed(true, storage);
-  assert.equal(storage.read(), 'suppressed');
-  assert.equal(shouldShowFirstRun({
-    storage,
-    sessionStorageRef: memoryStorage(FIRST_RUN_SESSION_KEY),
-    location: { search: '' },
-  }), false);
-
-  // Unticking before dismissing takes the suppression back.
-  setFirstRunSuppressed(false, storage);
-  assert.equal(storage.read(), null);
-  assert.equal(shouldShowFirstRun({
-    storage,
-    sessionStorageRef: memoryStorage(FIRST_RUN_SESSION_KEY),
-    location: { search: '' },
-  }), true);
-
-  // A cleared/hard-reset profile shows it again — an accepted, documented cost.
-  setFirstRunSuppressed(true, storage);
-  assert.equal(shouldShowFirstRun({
-    storage: memoryStorage(FIRST_RUN_STORAGE_KEY),
-    sessionStorageRef: memoryStorage(FIRST_RUN_SESSION_KEY),
-    location: { search: '' },
-  }), true);
-});
-
-test('welcome params work in both directions and outrank both suppressions', () => {
-  const suppressed = memoryStorage(FIRST_RUN_STORAGE_KEY, 'suppressed');
-  const dismissed = memoryStorage(FIRST_RUN_SESSION_KEY, 'dismissed');
-  // ?welcome=1 replays past the checkbox AND past a session dismissal.
-  assert.equal(shouldShowFirstRun({
-    storage: suppressed, sessionStorageRef: dismissed, location: { search: '?welcome=1' },
-  }), true);
-  // ?welcome=0 suppresses a session that would otherwise see it.
-  assert.equal(shouldShowFirstRun({ ...fresh(), location: { search: '?welcome=0' } }), false);
-  // A share link outranks everything, including the replay hatch.
-  assert.equal(shouldShowFirstRun({
-    hasShareState: true, ...fresh(), location: { search: '?welcome=1' },
-  }), false);
-});
-
-test('a share link never sees the launcher — its author already chose the view', () => {
-  assert.equal(shouldShowFirstRun({ hasShareState: true, ...fresh() }), false);
-});
-
-test('privacy-restricted storage fails open and every write stays best-effort', () => {
-  const blocked = {
-    getItem: () => { throw new Error('blocked'); },
-    setItem: () => { throw new Error('blocked'); },
-    removeItem: () => { throw new Error('blocked'); },
+test('the launcher appears on every page load regardless of prior browser state', () => {
+  const blockedStorage = {
+    getItem: () => { throw new Error('storage must not be read'); },
   };
-  assert.equal(shouldShowFirstRun({ storage: blocked, sessionStorageRef: blocked }), true);
-  assert.doesNotThrow(() => setFirstRunSuppressed(true, blocked));
-  assert.doesNotThrow(() => rememberFirstRunSessionDismissed(blocked));
+  assert.equal(shouldShowFirstRun({ location: { search: '' } }), true);
+  assert.equal(shouldShowFirstRun({
+    hasShareState: true,
+    storage: blockedStorage,
+    sessionStorageRef: blockedStorage,
+    location: { search: '' },
+  }), true);
 });
 
-test('a THROWING storage getter still fails open — Safari private mode', () => {
-  // The harder case, and the one a default parameter cannot survive: it is not
-  // getItem that throws, it is reading `globalThis.localStorage` AT ALL. A
-  // default like `storage = globalThis.localStorage` evaluates that getter
-  // before the function body starts, so the SecurityError escapes every
-  // try/catch in the module and the launcher silently never appears.
+test('welcome=0 is the sole per-load escape hatch', () => {
+  assert.equal(shouldShowFirstRun({ location: { search: '?welcome=0' } }), false);
+  assert.equal(shouldShowFirstRun({ location: { search: '?welcome=1' } }), true);
+  assert.equal(shouldShowFirstRun({ location: { search: '?other=value' } }), true);
+});
+
+test('the show policy never touches localStorage or sessionStorage', () => {
   const saved = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   const savedSession = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
   const hostile = {
@@ -136,49 +46,13 @@ test('a THROWING storage getter still fails open — Safari private mode', () =>
   Object.defineProperty(globalThis, 'localStorage', hostile);
   Object.defineProperty(globalThis, 'sessionStorage', hostile);
   try {
-    // No storage arguments at all: this is exactly how the app calls it.
-    assert.doesNotThrow(
-      () => shouldShowFirstRun({ location: { search: '' } }),
-      'a hostile storage getter must not escape shouldShowFirstRun',
-    );
-    assert.equal(
-      shouldShowFirstRun({ location: { search: '' } }),
-      true,
-      'a visitor whose storage throws must still SEE the launcher',
-    );
-    assert.doesNotThrow(() => setFirstRunSuppressed(true));
-    assert.doesNotThrow(() => setFirstRunSuppressed(false));
-    assert.doesNotThrow(() => rememberFirstRunSessionDismissed());
+    assert.equal(shouldShowFirstRun({ location: { search: '' } }), true);
   } finally {
     if (saved) Object.defineProperty(globalThis, 'localStorage', saved);
     else delete globalThis.localStorage;
     if (savedSession) Object.defineProperty(globalThis, 'sessionStorage', savedSession);
     else delete globalThis.sessionStorage;
   }
-});
-
-test('no storage is touched from a default parameter position', () => {
-  const module = fs.readFileSync(new URL('./firstRunExperience.js', import.meta.url), 'utf8');
-  // Comments stripped first: the block explaining this very defect quotes the
-  // bad pattern, and matching prose instead of code would make the pin a liar.
-  const code = module.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  assert.doesNotMatch(
-    code,
-    /=\s*globalThis\.(local|session)Storage/,
-    'storage must be resolved lazily inside a try, never as a default parameter',
-  );
-  // The only reads of the global areas live inside the guarded resolver.
-  const globalReads = [...code.matchAll(/globalThis\.(local|session)Storage/g)];
-  assert.equal(globalReads.length, 2, 'exactly two global storage reads, both in resolveStore');
-  const resolver = code.slice(code.indexOf('function resolveStore'), code.indexOf('function readStored'));
-  assert.equal(
-    [...resolver.matchAll(/globalThis\.(local|session)Storage/g)].length,
-    2,
-    'both global storage reads must be inside resolveStore, inside its try',
-  );
-  assert.match(resolver, /try \{[\s\S]*globalThis\.sessionStorage[\s\S]*\} catch/);
-  assert.match(code, /function readStored\(kind, injected, key\)/);
-  assert.match(code, /function writeStored\(kind, injected, key, value\)/);
 });
 
 // ── ESC arbitration: one surface, one key, never an invisible handler ────────
@@ -240,7 +114,7 @@ test('an overlay with NO class to watch still disarms the launcher', () => {
   // The repro, pinned as the stacking it actually is: the attribution lightbox
   // is full-screen ABOVE the card and announces itself with nothing. The card
   // keeps its box, so getClientRects() alone called it visible, ESC dismissed a
-  // buried launcher and wrote the session flag while the lightbox stayed open.
+  // buried launcher while the lightbox stayed open.
   const overlay = css.slice(css.indexOf('.cesium-credit-lightbox-overlay {'));
   assert.match(overlay.slice(0, overlay.indexOf('}')), /z-index: 200 !important/);
   const launcher = css.slice(css.indexOf('#first-run-launcher {'));
@@ -290,38 +164,6 @@ test('one ESC does one thing — the radio disclosure stops the launcher outrigh
   );
 });
 
-test('a refused write takes the tick back instead of promising "never again"', () => {
-  const module = fs.readFileSync(new URL('./firstRunExperience.js', import.meta.url), 'utf8');
-
-  // The write stays best-effort; the OUTCOME is now reported, because a box left
-  // ticked after a refused write tells the visitor the launcher is gone for good
-  // while it is already guaranteed to return next session.
-  const blocked = {
-    getItem: () => null,
-    setItem: () => { throw new Error('blocked'); },
-    removeItem: () => { throw new Error('blocked'); },
-  };
-  assert.equal(setFirstRunSuppressed(true, blocked), false);
-  assert.equal(setFirstRunSuppressed(false, blocked), false);
-  // No storage area at all is a refusal too — nothing was persisted either way.
-  assert.equal(setFirstRunSuppressed(true, null), false);
-  assert.equal(setFirstRunSuppressed(false, null), false);
-  // ...and a working store still reports success, or the checkbox would revert
-  // on every tick and the pin above would be measuring nothing.
-  const working = memoryStorage(FIRST_RUN_STORAGE_KEY);
-  assert.equal(setFirstRunSuppressed(true, working), true);
-  assert.equal(working.read(), 'suppressed');
-  assert.equal(setFirstRunSuppressed(false, working), true);
-  assert.equal(working.read(), null);
-
-  const handler = module.slice(
-    module.indexOf('const onSuppressChange = (event) => {'),
-    module.indexOf('  const keyboard = createSurfaceKeyboard({'),
-  );
-  assert.match(handler, /if \(setFirstRunSuppressed\(wanted, storage\)\) return;/);
-  assert.match(handler, /box\.checked = !wanted;/, 'a refused write must revert the tick');
-});
-
 test('a surface class that never clears is an ACCEPTED no-show, not a timer', () => {
   const module = fs.readFileSync(new URL('./firstRunExperience.js', import.meta.url), 'utf8');
   const state = fs.readFileSync(new URL('../docs/CURRENT-STATE.md', import.meta.url), 'utf8');
@@ -369,7 +211,7 @@ test('the launcher yields on engage and waits when a surface is already up', () 
     module,
     /if \(revealed && blocked\) yieldToExclusiveSurface\(\);\s*\n\s*else if \(!revealed && !blocked\) reveal\(\);/,
   );
-  // Yielding is session-scoped and must not steal focus from the new surface.
+  // Yielding is page-scoped and must not steal focus from the new surface.
   assert.match(module, /dismiss\(\{ restoreFocus: false \}\)/);
   // A cheap attribute watch, not a per-frame poll — the render governor must
   // not see a new hold because of onboarding chrome.
@@ -577,7 +419,8 @@ test('markup, startup ordering and accessibility remain pinned', () => {
   assert.match(html, /id="first-run-launcher" role="dialog"[^>]*aria-labelledby="first-run-title"[^>]*hidden/);
   assert.equal((html.match(/data-first-run-choice=/g) || []).length, 5);
   assert.match(html, /data-first-run-status[^>]*role="status"[^>]*aria-live="polite"/);
-  assert.match(html, /<input type="checkbox" data-first-run-suppress \/>/);
+  assert.doesNotMatch(html, /data-first-run-suppress|Don't show this again/);
+  assert.match(html, /<span>ESC to dismiss<\/span>/);
   assert.match(html, /<strong data-first-run-environmental-title>/);
   // Subcopy must name BOTH feeds the tile turns on — a tile that promised only
   // half of what it does is the defect this replaced. Only the VISIBLE <small>
@@ -627,7 +470,7 @@ test('markup, startup ordering and accessibility remain pinned', () => {
   assert.match(base, /display: flex/);
   assert.match(base, /max-height: calc\(100dvh/);
   assert.match(css, /#first-run-launcher\[hidden\] \{\s*display: none;\s*\}/);
-  // Only the mission list may scroll: the heading, checkbox and status line
+  // Only the mission list may scroll: the heading, footer and status line
   // have to stay on screen at every height.
   const choicesBlock = css.match(/\.first-run-choices \{([^}]*)\}/)?.[1] || '';
   assert.match(choicesBlock, /min-height: 0;/);

@@ -526,16 +526,16 @@ async function main() {
     await section('show-policy', async () => {
       await open(page);
       const freshVisible = await launcherVisible(page);
-      record('a fresh session gets the launcher', freshVisible);
+      record('a page load gets the launcher', freshVisible);
       if (freshVisible) shots.push(await shoot(page, 'launcher-desktop'));
 
       const focused = await page.evaluate(() => document.activeElement?.dataset?.firstRunChoice ?? null);
-      record('focus lands on the first mission tile', focused === 'contacts', `activeElement=${focused}`);
+      record('focus lands on the first mission tile', focused === 'panama', `activeElement=${focused}`);
 
       // The card is a flex column (so its list can scroll on short viewports),
       // and an author `display` on this id outranks the UA's `[hidden]` rule.
       // Prove the attribute still hides it, or it sits in the a11y tree from
-      // page parse until reveal — and on a share link, until removal.
+      // page parse until reveal.
       const hiddenHonored = await page.evaluate((sel) => {
         const node = document.querySelector(sel);
         if (!node) return null;
@@ -549,8 +549,8 @@ async function main() {
 
       const tiles = await page.$$eval('[data-first-run-choice]', (nodes) => nodes.map((n) => n.dataset.firstRunChoice));
       record(
-        'four tiles in the owner\'s order',
-        JSON.stringify(tiles) === JSON.stringify(['contacts', 'space-missions', 'environmental', 'explore']),
+        'five tiles in the owner\'s order',
+        JSON.stringify(tiles) === JSON.stringify(['panama', 'contacts', 'space-missions', 'environmental', 'explore']),
         tiles.join(' · '),
       );
 
@@ -558,46 +558,26 @@ async function main() {
       // alone passes vacuously whenever the launcher never appeared at all.
       await page.keyboard.press('Escape');
       await sleep(600);
-      const state = await appState(page);
       record('ESC dismisses the launcher', freshVisible && !(await launcherVisible(page)),
         freshVisible ? 'visible → dismissed' : 'never appeared, so nothing was dismissed');
-      record('ESC writes the SESSION flag only', state.session === 'dismissed' && state.durable === null,
-        `session=${state.session} durable=${state.durable}`);
 
-      // Same session, reload → stays gone. Also non-vacuous: it only means
-      // anything if this session had seen the launcher in the first place.
+      // Same session, reload → returns. This is the owner's explicit always-on
+      // policy, and must remain independent of any old stored preference.
       await open(page, { clearAll: false, clearSession: false });
-      record('a reload in the same session does not re-nag',
-        freshVisible && !(await launcherVisible(page)),
-        freshVisible ? 'seen this session, stayed away on reload' : 'never appeared, so the check is empty');
+      record('a reload in the same session shows the launcher again',
+        freshVisible && await launcherVisible(page));
 
-      // New session (sessionStorage cleared, localStorage kept) → back.
-      await open(page, { clearAll: false, clearSession: true });
-      record('the next fresh session gets it again', await launcherVisible(page));
-
-      // Checkbox → durable suppression.
-      await page.click('[data-first-run-suppress]');
-      await sleep(200);
-      const ticked = await appState(page);
-      record('the checkbox writes durable suppression immediately', ticked.durable === 'suppressed', `durable=${ticked.durable}`);
-      await page.keyboard.press('Escape');
-      await sleep(400);
-      await open(page, { clearAll: false, clearSession: true });
-      record('a suppressed profile stays quiet in later sessions',
-        ticked.durable === 'suppressed' && !(await launcherVisible(page)),
-        ticked.durable === 'suppressed' ? 'suppressed and stayed away' : 'nothing was ever suppressed');
-
-      // ?welcome=1 outranks the checkbox; ?welcome=0 suppresses a fresh session.
-      await open(page, { clearAll: false, clearSession: true, query: "?welcome=1", errorSink: consoleErrors });
-      record('?welcome=1 replays past durable suppression', await launcherVisible(page));
+      // ?welcome=0 is the sole per-load escape hatch.
+      await open(page, { clearAll: false, clearSession: false, query: "?welcome=1", errorSink: consoleErrors });
+      record('?welcome=1 shows the launcher', await launcherVisible(page));
       await open(page, { query: '?welcome=0' });
-      record('?welcome=0 suppresses a fresh session', !(await launcherVisible(page)));
+      record('?welcome=0 suppresses this page load', !(await launcherVisible(page)));
 
-      // Share links bypass entirely.
+      // Shared camera state no longer bypasses the always-on launcher.
       await open(page, { hash: '#lat=30.2672&lon=-97.7431&alt=2500' });
       const shareState = await page.evaluate(() => !!window.__godsEyeView?.styleManager?.hasShareState);
       const shareShowed = await launcherVisible(page);
-      record('a share link bypasses the launcher', shareState && !shareShowed,
+      record('a share link still shows the launcher', shareState && shareShowed,
         `hasShareState=${shareState} launcherVisible=${shareShowed}`);
     });
 
@@ -746,16 +726,11 @@ async function main() {
         if (!node) return null;
         const rect = node.getBoundingClientRect();
         const list = node.querySelector('.first-run-choices');
-        const checkbox = node.querySelector('[data-first-run-suppress]');
-        const cb = checkbox?.getBoundingClientRect();
         return {
           top: Math.round(rect.top), bottom: Math.round(rect.bottom),
           left: Math.round(rect.left), right: Math.round(rect.right),
           vw: window.innerWidth, vh: window.innerHeight,
           listScrolls: !!list && list.scrollHeight > list.clientHeight + 1,
-          // The checkbox and the status line live OUTSIDE the scrolling list, so
-          // they must be on screen at every height, scrollable list or not.
-          checkboxOnScreen: !!cb && cb.top >= 0 && cb.bottom <= window.innerHeight,
         };
       }, LAUNCHER);
       const fits = !!box && box.top >= 0 && box.bottom <= box.vh
@@ -765,9 +740,6 @@ async function main() {
         fits,
         box ? `${box.left},${box.top} → ${box.right},${box.bottom} in ${box.vw}x${box.vh}${box.listScrolls ? ' (list scrolls)' : ''}` : 'absent',
       );
-      record(`"Don't show this again" stays on screen at ${vp.width}x${vp.height}`,
-        !!box?.checkboxOnScreen);
-
       // Discoverability: if the list scrolls, the LAST tile must still peek
       // above the fold. A fold that lands exactly between tiles looks like a
       // complete list of four, and the fifth mission is simply never found.
@@ -796,12 +768,12 @@ async function main() {
           : 'absent',
       );
 
-      // Every tile plus the checkbox must still be reachable by Tab when the
-      // list scrolls — and reaching one must bring it into view.
+      // Every tile must still be reachable by Tab when the list scrolls — and
+      // reaching one must bring it into view.
       const reach = await page.evaluate(async (sel) => {
         const node = document.querySelector(sel);
         if (!node) return null;
-        const targets = [...node.querySelectorAll('[data-first-run-choice], [data-first-run-suppress]')];
+        const targets = [...node.querySelectorAll('[data-first-run-choice]')];
         const offscreen = [];
         for (const target of targets) {
           target.focus();
@@ -810,19 +782,17 @@ async function main() {
           const host = node.getBoundingClientRect();
           if (document.activeElement !== target
             || rect.bottom <= host.top || rect.top >= host.bottom) {
-            offscreen.push(target.dataset.firstRunChoice || 'suppress-checkbox');
+            offscreen.push(target.dataset.firstRunChoice);
           }
         }
         return { count: targets.length, offscreen };
       }, LAUNCHER);
-      // Derived, not a magic number: every rendered tile plus the checkbox.
-      // A hardcoded count silently turns into a failure the day the menu
-      // changes, which is exactly what it did when a tile was removed.
+      // Derived, not a magic number: every rendered tile.
       const expectedFocusable = await page.$$eval(
         '[data-first-run-choice]', (nodes) => nodes.length,
-      ) + 1;
+      );
       record(
-        `every tile and the checkbox are keyboard-reachable at ${vp.width}x${vp.height}`,
+        `every tile is keyboard-reachable at ${vp.width}x${vp.height}`,
         !!reach && reach.count === expectedFocusable && reach.offscreen.length === 0,
         reach
           ? `${reach.count}/${expectedFocusable} focusable${reach.offscreen.length ? `, unreachable: ${reach.offscreen.join(', ')}` : ''}`

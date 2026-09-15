@@ -716,8 +716,9 @@ policy, fallback behavior, response shapes and rendering remain unchanged.
 
 Scope, Bloom, Sharpen and location search have explicit accessible names.
 Generated style sliders use the same name as their visible parameter label.
-The first-run suppression checkbox keeps its native wrapping label, so its
-accessible name remains "Don't show this again". Control behavior is unchanged.
+The first-run launcher has no persistent suppression control. It appears again
+after every refresh, while its visible "ESC to dismiss" hint documents the
+page-scoped close action.
 
 ## FIRMS source status
 
@@ -785,16 +786,11 @@ fetching, trailing-24-hour filtering and partial-success caching are unchanged.
 > tile before the bundled-infra globe-LOD declutter lands — that is the real
 > fix, and it is post-launch work.
 >
-> **Show policy — it is NOT one-shot.** Precedence, highest first: a share link
-> never sees it → `?welcome=0` suppresses → `?welcome=1` replays (past both
-> suppressions, for demos/support) → the durable
-> `localStorage['gev:first-run-mission:v1'] === 'suppressed'`, written **only**
-> by the "Don't show this again" checkbox → the per-session
-> `sessionStorage['gev:first-run-mission-session:v1'] === 'dismissed'`, written
-> by **every** close path (mission, Explore, ESC). So it returns each fresh
-> browser session until the visitor ticks the box; clearing storage un-ticks it,
-> which is accepted. Both stores fail open — an unreadable store still shows the
-> launcher rather than silently swallowing first launch.
+> **Show policy — every page load.** The launcher appears on every load and
+> refresh, including shared views. A mission, Explore, ESC, or yielding to an
+> exclusive surface dismisses it only from the current document; no browser
+> preference is read or written. `?welcome=0` is the sole per-load escape hatch
+> for embeds and special links; any other value, including `?welcome=1`, shows it.
 >
 > **What a mission may persist (do not "simplify" this).** Layer enablement is
 > durable in this app (`gev:layer-state:v2`, written by
@@ -821,12 +817,12 @@ fetching, trailing-24-hour filtering and partial-success caching are unchanged.
 > launcher **yields**: a MutationObserver watches `body` for the surfaces that
 > take the screen (`cockpit-mode`, `scene-playback-mode`, `recording-mode`,
 > `ui-clean-view` — `EXCLUSIVE_SURFACE_CLASSES`, kept in step with the CSS hide
-> rule by a unit pin), and session-dismisses rather than contesting the key; if
+> rule by a unit pin), and page-dismisses rather than contesting the key; if
 > one is already up at init it **waits** instead of appearing over it. (2) A
 > surface can take the screen with **no class to watch** — the Cesium attribution
 > lightbox is full-screen at `z-index: 200` against the card's `175`, which left
 > the launcher measurable (`getClientRects()` non-empty) and buried, so ESC
-> dismissed a card nobody could see and burned the session flag. `isTopmost()`
+> dismissed a card nobody could see. `isTopmost()`
 > therefore also **hit-tests the card's own centre** with `elementFromPoint`; any
 > overlay, classed or not, disarms the handler. Every inconclusive answer counts
 > as uncovered, so the guard can never be why ESC stops working. (3) A small
@@ -842,12 +838,8 @@ fetching, trailing-24-hour filtering and partial-success caching are unchanged.
 > already-blocked init is an error path, while a long recording or clean-view
 > session is ordinary — a "reveal anyway" timer would trade a benign no-show for
 > the card punching through a recording in progress. The no-show is benign: the
-> handler is inert, no session flag is written, the observer still reveals the
-> card if the class clears, and it returns next session either way.
->
-> **Blocked storage un-ticks the box.** "Don't show this again" is a claim about
-> the future, so a refused `setItem` reverts the checkbox and says so in the
-> status line instead of showing a saved preference that was never saved.
+> handler is inert, the observer still reveals the card if the class clears,
+> and it returns on refresh either way.
 >
 > Gates: `node scripts/qa-firstrun.mjs --url <app>` (in-app checks across eight
 > independent sections) plus its `--teeth` negative control, which removes

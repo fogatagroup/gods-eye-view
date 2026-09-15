@@ -2,29 +2,11 @@ import { createSurfaceKeyboard } from './ui/surfaceKeyboard.js';
 
 // First-run mission launcher.
 //
-// The map deliberately does not auto-enable live feeds on every visit: doing so
-// would spend optional API quotas, surprise returning operators, and fight share
-// links. A new visitor instead gets one compact, explicit choice after startup.
-//
-// SHOW POLICY (owner ruling, 2026-08-23). The launcher is NOT one-shot. A new
-// operator needs the map explained more than once, so it returns every fresh
-// browser session until they say otherwise:
-//
-//   - a share link never sees it — its author already chose the experience;
-//   - `?welcome=0` suppresses, `?welcome=1` replays (it outranks BOTH the
-//     session flag and the durable one, so support can always demo it);
-//   - ticking "Don't show this again" writes the DURABLE suppression — that
-//     tick is the only thing that stops it coming back;
-//   - any other close (a mission, Explore manually, ESC) writes only the
-//     SESSION flag, so it stays gone for this tab and returns next session.
-//
-// Choosing a mission is deliberately NOT durable suppression: picking a mission
-// is enthusiasm, not "never show me this again".
-
-/** Durable suppression. Written ONLY by the "Don't show this again" checkbox. */
-export const FIRST_RUN_STORAGE_KEY = 'gev:first-run-mission:v1';
-/** Per-session dismissal. Written by every close path; scoped to sessionStorage. */
-export const FIRST_RUN_SESSION_KEY = 'gev:first-run-mission-session:v1';
+// SHOW POLICY (owner ruling, 2026-09-14). The map deliberately does not
+// auto-enable live feeds: the launcher asks for one explicit starting view
+// after startup instead. It appears on every page load, including shared views,
+// and closing it affects only the current page.
+// `?welcome=0` is the sole per-load escape hatch for embeds and special links.
 
 /**
  * Owner-selectable name for the fires/quakes mission. Flip this ONE constant to
@@ -130,124 +112,15 @@ export const FIRST_RUN_MISSIONS = Object.freeze({
   explore: Object.freeze({ kind: 'none' }),
 });
 
-/*
- * STORAGE ACCESS IS LAZY AND GUARDED — NEVER A DEFAULT PARAMETER.
- *
- * `globalThis.localStorage` is a GETTER, and in Safari's private mode (and under
- * some enterprise policies) reading it THROWS SecurityError. A default parameter
- * like `storage = globalThis.localStorage` evaluates that getter before the
- * function body starts, so it throws outside every try/catch this module has —
- * the exception escapes, initFirstRunExperience never runs, and the launcher
- * silently never appears. That is the exact opposite of failing open.
- *
- * So the storage AREA is resolved inside a try, at the moment it is used, and an
- * injected stub (tests, callers) short-circuits the global entirely.
- */
-
-/**
- * Resolve a Web Storage area without letting a hostile getter escape.
- * @param {'local'|'session'} kind
- * @param {object|null|undefined} injected Explicit store; `undefined` means "use the global".
- * @returns {{getItem?: Function, setItem?: Function, removeItem?: Function}|null}
- */
-function resolveStore(kind, injected) {
-  if (injected !== undefined) return injected;
-  try {
-    return kind === 'session' ? globalThis.sessionStorage : globalThis.localStorage;
-  } catch {
-    // Privacy-restricted storage should not make first launch silent.
-    return null;
-  }
-}
-
-/** Read one key, treating every failure as "nothing stored". */
-function readStored(kind, injected, key) {
-  try {
-    return resolveStore(kind, injected)?.getItem?.(key) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Write one key, best-effort. Never throws; REPORTS whether the value landed so
- * a caller that showed the visitor a promise ("don't show this again") can take
- * it back rather than display a preference nothing stored.
- * @returns {boolean} true only if the value was actually written.
- */
-function writeStored(kind, injected, key, value) {
-  try {
-    const store = resolveStore(kind, injected);
-    if (typeof store?.setItem !== 'function') return false;
-    store.setItem(key, value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Remove one key, best-effort.
- * @returns {boolean} true only if the removal actually happened.
- */
-function removeStored(kind, injected, key) {
-  try {
-    const store = resolveStore(kind, injected);
-    if (typeof store?.removeItem !== 'function') return false;
-    store.removeItem(key);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Decide whether the launcher belongs in this page load.
  * @param {object} input
- * @param {boolean} [input.hasShareState]
- * @param {{getItem: Function}|null} [input.storage] Durable (localStorage).
- * @param {{getItem: Function}|null} [input.sessionStorageRef] Per-session.
  * @param {{search?: string}|null} [input.location]
  * @returns {boolean}
  */
-export function shouldShowFirstRun({
-  hasShareState = false,
-  storage,
-  sessionStorageRef,
-  location = globalThis.location,
-} = {}) {
-  if (hasShareState) return false;
+export function shouldShowFirstRun({ location = globalThis.location } = {}) {
   const params = new URLSearchParams(location?.search || '');
-  if (params.get('welcome') === '0') return false;
-  // The demo/support escape hatch outranks both suppressions on purpose.
-  if (params.get('welcome') === '1') return true;
-  if (readStored('local', storage, FIRST_RUN_STORAGE_KEY) === 'suppressed') return false;
-  if (readStored('session', sessionStorageRef, FIRST_RUN_SESSION_KEY) === 'dismissed') return false;
-  return true;
-}
-
-/**
- * Write (or clear) the durable "don't show this again" suppression. Storage is
- * best-effort — a blocked store still closes the launcher for this session —
- * but the outcome is RETURNED, because the checkbox that calls this is showing
- * the visitor a claim about the future and must not keep a tick nothing saved.
- * @param {boolean} suppressed
- * @param {{setItem: Function, removeItem?: Function}|null} [storage]
- * @returns {boolean} true if the durable state now matches what was asked.
- */
-export function setFirstRunSuppressed(suppressed, storage) {
-  return suppressed
-    ? writeStored('local', storage, FIRST_RUN_STORAGE_KEY, 'suppressed')
-    : removeStored('local', storage, FIRST_RUN_STORAGE_KEY);
-}
-
-/**
- * Record that this browser session has seen and closed the launcher.
- * @param {{setItem: Function}|null} [sessionStorageRef]
- * @returns {void}
- */
-export function rememberFirstRunSessionDismissed(sessionStorageRef) {
-  writeStored('session', sessionStorageRef, FIRST_RUN_SESSION_KEY, 'dismissed');
+  return params.get('welcome') !== '0';
 }
 
 /**
@@ -326,8 +199,6 @@ export function exclusiveSurfaceActive(documentRef = globalThis.document) {
  * @param {object} input.styleManager Initialized StyleManager.
  * @param {object} [input.dataManager] DataManager, for the globe missions' layers.
  * @param {Document} [input.documentRef]
- * @param {Storage} [input.storage]
- * @param {Storage} [input.sessionStorageRef]
  * @param {Location} [input.location]
  * @returns {null|{dismiss: Function}}
  */
@@ -335,20 +206,13 @@ export function initFirstRunExperience({
   styleManager,
   dataManager = styleManager?._dataManager,
   documentRef = globalThis.document,
-  storage,
-  sessionStorageRef,
   location = globalThis.location,
 } = {}) {
   const root = documentRef?.getElementById?.('first-run-launcher');
   if (!root || root.dataset.initialized === 'true') return null;
   root.dataset.initialized = 'true';
 
-  if (!shouldShowFirstRun({
-    hasShareState: styleManager?.hasShareState,
-    storage,
-    sessionStorageRef,
-    location,
-  })) {
+  if (!shouldShowFirstRun({ location })) {
     root.remove();
     return null;
   }
@@ -359,7 +223,6 @@ export function initFirstRunExperience({
   if (environmentalTitle) environmentalTitle.textContent = environmentalLabel().title;
 
   const status = root.querySelector('[data-first-run-status]');
-  const suppressBox = root.querySelector('[data-first-run-suppress]');
   const buttons = [...root.querySelectorAll('[data-first-run-choice]')];
   const defaultStatus = status?.textContent || '';
   let busy = false;
@@ -370,7 +233,7 @@ export function initFirstRunExperience({
    * The attribution lightbox is a full-screen overlay at `z-index: 200` against
    * this card's 175 and announces itself with NO body class, so it left the
    * launcher measurable but buried: ESC dismissed a card the visitor could not
-   * see — and burned the session flag — behind a lightbox that stayed open.
+   * see behind a lightbox that stayed open.
    *
    * Watching one more class would have fixed one more overlay. Hit-testing the
    * card's own centre answers it for ANY overlay, classed or not, shipped or
@@ -413,7 +276,6 @@ export function initFirstRunExperience({
   const dismiss = ({ restoreFocus = true } = {}) => {
     if (closing) return;
     closing = true;
-    rememberFirstRunSessionDismissed(sessionStorageRef);
     root.classList.remove('visible');
     root.setAttribute('aria-hidden', 'true');
     globalThis.removeEventListener?.('resize', onViewportResize);
@@ -488,20 +350,6 @@ export function initFirstRunExperience({
     setBusy(false);
   };
 
-  const onSuppressChange = (event) => {
-    const box = event.currentTarget;
-    const wanted = Boolean(box?.checked);
-    if (setFirstRunSuppressed(wanted, storage)) return;
-    // The write is best-effort; the TICK is not. A box left checked after a
-    // refused write tells the visitor "never again" about a launcher that is
-    // already guaranteed to come back next session. Put the box back where the
-    // truth is, and say why rather than leaving a control that undoes itself.
-    if (box) box.checked = !wanted;
-    if (!status) return;
-    status.dataset.sticky = 'true';
-    status.textContent = 'This browser is blocking storage, so that could not be saved.';
-  };
-
   const keyboard = createSurfaceKeyboard({
     root,
     documentRef,
@@ -513,7 +361,6 @@ export function initFirstRunExperience({
   });
 
   for (const button of buttons) button.addEventListener('click', onChoice);
-  suppressBox?.addEventListener('change', onSuppressChange);
   // Capture phase: the app binds its own global hotkeys (including bare letters
   // that cycle detection and styles), and the launcher owns the keyboard first.
   keyboard.activate();
@@ -572,8 +419,8 @@ export function initFirstRunExperience({
    */
   const yieldToExclusiveSurface = () => {
     if (closing) return;
-    // Session-scoped, like any other dismissal: it returns next session. Focus
-    // stays with whatever just took the screen.
+    // Page-scoped, like any other dismissal: it returns on refresh. Focus stays
+    // with whatever just took the screen.
     dismiss({ restoreFocus: false });
   };
 
@@ -590,9 +437,9 @@ export function initFirstRunExperience({
    * progress, which is the worse of the two failures.
    *
    * And the no-show IS benign: the card stays hidden, the key handler is inert
-   * (isTopmost() is false), no session flag is written, and the observer is
-   * still watching — so it appears the moment the class clears, and returns next
-   * session regardless. Documented in docs/CURRENT-STATE.md.
+   * (isTopmost() is false), and the observer is still watching — so it appears
+   * the moment the class clears, and returns on the next refresh regardless.
+   * Documented in docs/CURRENT-STATE.md.
    */
   const syncToExclusiveSurfaces = () => {
     if (closing) return;

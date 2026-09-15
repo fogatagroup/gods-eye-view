@@ -9,8 +9,8 @@
   width: min(34rem, calc(100vw - 2rem));
   /* Five tiles do not fit a short landscape phone (667 x 390), where the card
      would otherwise render past BOTH ends of the viewport. Cap it to the
-     viewport and let the mission list scroll inside — the heading, the checkbox
-     and the status line must stay reachable at every height. */
+     viewport and let the mission list scroll inside — the heading, footer and
+     status line must stay reachable at every height. */
   max-height: calc(100vh - 1.5rem);
   max-height: calc(100dvh - 1.5rem);
   display: flex;
@@ -213,32 +213,11 @@
 }
 
 .first-run-footer {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 0.85rem;
   font-size: 0.48rem;
   letter-spacing: 0.055rem;
-}
-
-.first-run-suppress {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: rgba(199, 225, 231, 0.66);
-  text-transform: none;
-  font-size: 0.62rem;
-  letter-spacing: 0.02rem;
-  cursor: pointer;
-}
-
-.first-run-suppress input {
-  width: 0.82rem;
-  height: 0.82rem;
-  margin: 0;
-  accent-color: #36dcff;
-  cursor: pointer;
-}
-
-.first-run-suppress:hover {
-  color: rgba(225, 244, 248, 0.92);
 }
 
 /* The live region carries mission progress and failures, so it owns a full row
