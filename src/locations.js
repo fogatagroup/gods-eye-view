@@ -1203,7 +1203,7 @@ function shouldFrameGeocodeViewport(mode) {
   );
 }
 
-function flyToViewportBounds(viewer, viewport, options = {}) {
+export function flyToViewportBounds(viewer, viewport, options = {}) {
   const {
     duration = 3.0,
     beforeFly = null,

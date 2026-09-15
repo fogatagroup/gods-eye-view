@@ -198,6 +198,15 @@
   transform: translateX(2px);
 }
 
+.first-run-choices button.first-run-panama {
+  background: linear-gradient(
+    100deg,
+    rgba(60, 198, 255, 0.16),
+    rgba(96, 211, 148, 0.08)
+  );
+  border-color: rgba(60, 198, 255, 0.42);
+}
+
 /* Ordered after the shared button rule rather than shouting !important at it. */
 .first-run-choices button.first-run-explore {
   background: rgba(255, 255, 255, 0.025);

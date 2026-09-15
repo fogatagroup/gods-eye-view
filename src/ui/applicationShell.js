@@ -3250,6 +3250,23 @@ export class StyleManager {
   }
 
   /**
+   * Frame a fixed geographic area through the normal navigation-ownership path.
+   * Used by curated first-run destinations that must work without geocoding.
+   * @param {object} viewBounds Southwest/northeast latitude-longitude bounds.
+   * @returns {object|false} The camera target returned by the bounds flight.
+   */
+  flyToOverviewBounds(viewBounds) {
+    const { flyToViewportBounds } = this.services;
+    return this._flyWithTransition(true, (hooks) =>
+      flyToViewportBounds(this.viewer, viewBounds, {
+        ...hooks,
+        duration: 2.8,
+        navigationMode: 'area-overview',
+      }),
+    );
+  }
+
+  /**
    * Release every camera owner and return to the canonical full-globe frame.
    * Repeated requests adopt the in-flight reset rather than cancelling it.
    * @returns {Promise<object>} Canonical reset result shared with voice.

@@ -381,7 +381,7 @@ test('the launcher yields on engage and waits when a surface is already up', () 
 // ── Per-mission behavior ─────────────────────────────────────────────────────
 
 function missionSpy({ contextOk = true, layerResult = () => true, globe = async () => ({ ok: true }) } = {}) {
-  const calls = { contextModes: [], layerIds: [], globeFlights: 0 };
+  const calls = { contextModes: [], layerIds: [], globeFlights: 0, overviewBounds: [] };
   return {
     calls,
     deps: {
@@ -397,21 +397,40 @@ function missionSpy({ contextOk = true, layerResult = () => true, globe = async 
         calls.globeFlights += 1;
         return globe();
       },
+      flyToOverviewBounds: async (bounds) => {
+        calls.overviewBounds.push(bounds);
+        return { ok: true, navigationMode: 'area-overview' };
+      },
     },
   };
 }
 
-test('the menu is the four owner-ordered missions', () => {
+test('the menu is the five owner-ordered missions', () => {
   // INFRASTRUCTURE was removed after the owner playtested it: enabling all
   // three bundled layers at once put ~5,700 entities on a full-earth view and
   // tanked the frame rate. The layers stay reachable by hand and by voice; what
   // went is the one-click globe-scale dump. Restoring the tile needs the
   // globe-LOD declutter first.
   assert.deepEqual(Object.keys(FIRST_RUN_MISSIONS), [
-    'contacts', 'space-missions', 'environmental', 'explore',
+    'panama', 'contacts', 'space-missions', 'environmental', 'explore',
   ]);
   assert.equal(FIRST_RUN_MISSIONS.infrastructure, undefined,
     'the infrastructure mission must be gone, not dormant');
+});
+
+test('Panamá frames the complete country from fixed keyless bounds', async () => {
+  const spy = missionSpy();
+  const outcome = await runFirstRunChoice('panama', spy.deps);
+  assert.equal(outcome.ok, true);
+  assert.deepEqual(spy.calls.overviewBounds, [
+    {
+      southwest: { lat: 7.12, lng: -83.05 },
+      northeast: { lat: 9.65, lng: -77.16 },
+    },
+  ]);
+  assert.deepEqual(spy.calls.contextModes, []);
+  assert.deepEqual(spy.calls.layerIds, []);
+  assert.equal(spy.calls.globeFlights, 0);
 });
 
 test('Live Contacts and Space Missions go through the one setContextMode facade', async () => {
@@ -483,9 +502,9 @@ test('a refused layer fails the mission by name, and a stalled flight never does
 test('Explore manually touches nothing at all, and an unknown choice is inert', async () => {
   const spy = missionSpy();
   assert.equal((await runFirstRunChoice('explore', spy.deps)).ok, true);
-  assert.deepEqual(spy.calls, { contextModes: [], layerIds: [], globeFlights: 0 });
+  assert.deepEqual(spy.calls, { contextModes: [], layerIds: [], globeFlights: 0, overviewBounds: [] });
   assert.equal((await runFirstRunChoice('nope', spy.deps)).ok, false);
-  assert.deepEqual(spy.calls, { contextModes: [], layerIds: [], globeFlights: 0 });
+  assert.deepEqual(spy.calls, { contextModes: [], layerIds: [], globeFlights: 0, overviewBounds: [] });
 });
 
 test('a failed Context mission reports the layers the facade named', async () => {
@@ -556,7 +575,7 @@ test('markup, startup ordering and accessibility remain pinned', () => {
   const css = readStylesheet(new URL('../style.css', import.meta.url));
 
   assert.match(html, /id="first-run-launcher" role="dialog"[^>]*aria-labelledby="first-run-title"[^>]*hidden/);
-  assert.equal((html.match(/data-first-run-choice=/g) || []).length, 4);
+  assert.equal((html.match(/data-first-run-choice=/g) || []).length, 5);
   assert.match(html, /data-first-run-status[^>]*role="status"[^>]*aria-live="polite"/);
   assert.match(html, /<input type="checkbox" data-first-run-suppress \/>/);
   assert.match(html, /<strong data-first-run-environmental-title>/);
@@ -579,7 +598,7 @@ test('markup, startup ordering and accessibility remain pinned', () => {
 
   // Menu order is the owner's, read straight off the markup.
   const order = [...html.matchAll(/data-first-run-choice="([a-z-]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(order, ['contacts', 'space-missions', 'environmental', 'explore']);
+  assert.deepEqual(order, ['panama', 'contacts', 'space-missions', 'environmental', 'explore']);
   assert.doesNotMatch(html, /data-first-run-choice="infrastructure"/,
     'the removed tile must leave no markup behind');
 

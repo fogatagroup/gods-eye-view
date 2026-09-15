@@ -89,6 +89,16 @@ export function environmentalLabel(choice = ENVIRONMENTAL_LABEL_CHOICE) {
 
 /** @type {Readonly<Record<string, object>>} */
 export const FIRST_RUN_MISSIONS = Object.freeze({
+  panama: Object.freeze({
+    kind: 'location',
+    busyText: 'Flying to Panamá…',
+    // Fixed national bounds keep this flagship destination fast, deterministic,
+    // and fully keyless rather than depending on a geocoder at first launch.
+    viewBounds: Object.freeze({
+      southwest: Object.freeze({ lat: 7.12, lng: -83.05 }),
+      northeast: Object.freeze({ lat: 9.65, lng: -77.16 }),
+    }),
+  }),
   contacts: Object.freeze({
     kind: 'context',
     contextMode: 'contacts',
@@ -251,15 +261,23 @@ export function rememberFirstRunSessionDismissed(sessionStorageRef) {
  * @param {(mode: string) => Promise<object>} deps.setContextMode
  * @param {(layerId: string) => Promise<boolean>} deps.setLayerEnabled
  * @param {() => Promise<any>} deps.flyToGlobe
+ * @param {(viewBounds: object) => Promise<any>|any} deps.flyToOverviewBounds
  * @returns {Promise<{ok: boolean, choice: string, result?: object, failedLayerIds?: string[]}>}
  */
-export async function runFirstRunChoice(choice, { setContextMode, setLayerEnabled, flyToGlobe }) {
+export async function runFirstRunChoice(
+  choice,
+  { setContextMode, setLayerEnabled, flyToGlobe, flyToOverviewBounds },
+) {
   const mission = FIRST_RUN_MISSIONS[choice];
   if (!mission) return { ok: false, choice };
   if (mission.kind === 'none') return { ok: true, choice };
   if (mission.kind === 'context') {
     const result = await setContextMode(mission.contextMode);
     return { ok: Boolean(result?.ok), choice, result };
+  }
+  if (mission.kind === 'location') {
+    const result = await flyToOverviewBounds(mission.viewBounds);
+    return { ok: result !== false, choice, result };
   }
   // Globe missions: start the pull-out and the layer work together so the
   // camera is already moving while the feeds spin up. The flight is framing,
@@ -446,6 +464,8 @@ export function initFirstRunExperience({
         // these layers, so it persists exactly as clicking those rows would.
         setLayerEnabled: (layerId) => dataManager.setEnabled(layerId, true, { origin: 'user' }),
         flyToGlobe: () => styleManager.resetToGlobeView(),
+        flyToOverviewBounds: (viewBounds) =>
+          styleManager.flyToOverviewBounds(viewBounds),
       });
     } catch (error) {
       // A thrown mission is a real defect worth seeing in a bug report; the
