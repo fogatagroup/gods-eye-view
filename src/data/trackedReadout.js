@@ -195,7 +195,13 @@ export function getActiveTrackedReadoutId() {
 }
 
 /** Static-context layers whose click selection publishes the readout card. */
-const READOUT_CONTEXT_LAYERS = new Set(['military-installations', 'alpr-cameras']);
+const READOUT_CONTEXT_LAYERS = new Set([
+  'military-installations',
+  'alpr-cameras',
+  'panama-official-hotels',
+  'panama-official-agencies',
+  'panama-official-tourism',
+]);
 
 /**
  * Initialize the model bridge and selection listeners. No render listener is

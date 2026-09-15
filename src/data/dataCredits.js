@@ -28,6 +28,13 @@ import * as Cesium from 'cesium';
 export const DATA_CREDITS = [
   // ── Live sources ────────────────────────────────────────────────
   {
+    key: 'panama-oficial',
+    html:
+      'Hotels, agencies &amp; tourism locations: ' +
+      '<a href="https://panamaoficial.com/" target="_blank" rel="noopener">Panamá Oficial</a> ' +
+      '(official first-party source)',
+  },
+  {
     key: 'opensky',
     html:
       'Flights: OpenSky Network — Schäfer et al., ' +

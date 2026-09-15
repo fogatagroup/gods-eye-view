@@ -181,6 +181,15 @@ const LAYER_ALIASES = new Map([
   ['license plate readers', 'alpr-cameras'],
   ['license plate cameras', 'alpr-cameras'],
   ['plate readers', 'alpr-cameras'],
+  ['panama oficial hotels', 'panama-official-hotels'],
+  ['panama official hotels', 'panama-official-hotels'],
+  ['hoteles de panama oficial', 'panama-official-hotels'],
+  ['panama oficial agencies', 'panama-official-agencies'],
+  ['panama official agencies', 'panama-official-agencies'],
+  ['agencias de panama oficial', 'panama-official-agencies'],
+  ['panama oficial tourism', 'panama-official-tourism'],
+  ['panama official tourism', 'panama-official-tourism'],
+  ['turismo de panama oficial', 'panama-official-tourism'],
 ]);
 
 const CITY_ALIASES = new Map([
@@ -3206,6 +3215,9 @@ function layerTitle(layerId) {
   if (layerId === 'local-dams') return 'Dam';
   if (layerId === 'telegeography-submarine-cables') return 'Submarine Cable';
   if (layerId === 'local-firms') return 'Active Fire';
+  if (layerId === 'panama-official-hotels') return 'Panamá Oficial Hotel';
+  if (layerId === 'panama-official-agencies') return 'Panamá Oficial Agency';
+  if (layerId === 'panama-official-tourism') return 'Panamá Oficial Place';
   return layerId || 'Entity';
 }
 

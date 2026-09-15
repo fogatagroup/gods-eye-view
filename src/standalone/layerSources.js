@@ -14,6 +14,7 @@ import { createOverpassAlprSource } from '../layers/alpr/index.js';
 import { createFirmsSource } from '../layers/firms/index.js';
 import { createUsgsEarthquakeSource } from '../layers/earthquakes/source.js';
 import { createBundledCableSource } from '../layers/submarineCables/bundledSource.js';
+import { createPanamaOfficialSource } from '../layers/panamaOfficial/source.js';
 
 /** Existing reference feeds, usable independently of live source selection. */
 export function createStandaloneReferenceSources() {
@@ -41,5 +42,8 @@ export function createStandaloneLayerSources() {
     launches: createLaunchSource(),
     alpr: createOverpassAlprSource(),
     firms: createFirmsSource(),
+    panamaOfficial: createPanamaOfficialSource({
+      apiBase: import.meta.env?.VITE_PANAMA_OFFICIAL_API_URL,
+    }),
   };
 }

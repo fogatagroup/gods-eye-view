@@ -38,7 +38,17 @@ test('catalogs construct distinct layers and classification from their supplied 
     signal: b.signal,
     surface: fixtureSurface(b.signal),
   });
-  assert.equal(first.layers.length, 17);
+  assert.equal(first.layers.length, 20);
+  assert.deepEqual(
+    first.layers
+      .filter(({ id }) => id.startsWith('panama-official-'))
+      .map(({ id }) => id),
+    [
+      'panama-official-hotels',
+      'panama-official-agencies',
+      'panama-official-tourism',
+    ],
+  );
   assert.deepEqual(
     first.layers.map(({ id }) => id),
     second.layers.map(({ id }) => id),

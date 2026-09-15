@@ -167,8 +167,8 @@ test('the edited existing tools changed exactly as intended', () => {
 });
 
 test('no unchanged Realtime tool definition drifts silently', () => {
-  // Context/Cockpit parity, the dependent-location wait edit, and the retired
-  // `bing-road` stack leaving `set_map_stack`'s enum are the known schema
+  // Context/Cockpit parity, the dependent-location wait edit, the retired
+  // `bing-road` stack, and the Panama Oficial layer enums are the known schema
   // changes. Everything else must be byte-identical: an unnoticed edit
   // to a shipped tool changes
   // model behavior in production with nothing in review to catch it.
@@ -184,17 +184,20 @@ test('no unchanged Realtime tool definition drifts silently', () => {
     'fly_to_location',
     'select_nearest_aircraft',
     'set_map_stack',
+    'set_layer_visibility',
+    'show_data_layers_menu',
+    'get_entity_context',
   ]);
   const unchanged = realtimeTools()
     .filter((tool) => !TOUCHED.has(tool.name))
     .sort((a, b) => a.name.localeCompare(b.name));
-  assert.equal(unchanged.length, 21);
+  assert.equal(unchanged.length, 18);
   const digest = createHash('sha256')
     .update(JSON.stringify(unchanged))
     .digest('hex')
     .slice(0, 16);
-  // ALPR intentionally extends the two layer enums; retain the complete pin.
-  assert.equal(digest, '351140353c6bcf18', 'an unchanged Realtime tool definition drifted');
+  // ALPR intentionally extends the remaining layer enum; retain the complete pin.
+  assert.equal(digest, '697ad40a9ddecf19', 'an unchanged Realtime tool definition drifted');
 });
 
 test('Radio volume and mission speed share the Sharpen slider visual language', () => {

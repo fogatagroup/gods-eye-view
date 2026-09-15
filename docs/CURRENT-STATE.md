@@ -3371,6 +3371,22 @@ Replay transport uses one Play/Pause toggle plus Cancel. During ascent only the 
 
 When runtime behavior or architecture changes, update this file in the same change set as code updates.
 
+## Panamá Oficial tourism layers
+
+Three independently toggleable layers consume the public, read-only GeoJSON API
+at `https://api.panamaoficial.com/api/world/v1`: `panama-official-hotels`
+(hotel, hostel, resort), `panama-official-agencies` (travel agency and tour
+operator), and `panama-official-tourism` (the remaining tourism categories).
+The source follows opaque pagination cursors at the API's 1,000-row page limit,
+deduplicates stable `panamaoficial:*` IDs, rejects malformed/non-Point features,
+and retains only the documented public fields. Each layer refreshes every five
+minutes, keeps its last good snapshot visible on a transient failure, reports
+loading/stale/unavailable state through the normal Data Layers row, and supports
+selection cards with category, location, public contact and source provenance.
+The three visibility choices participate in v2 local/share state and are exposed
+to the voice layer controls. The endpoint is keyless; an alternate compatible
+base can be supplied with `VITE_PANAMA_OFFICIAL_API_URL`.
+
 ## Dependency security baseline
 
 The lockfile uses DOMPurify 3.4.15, protobufjs 8.8.0, PostCSS 8.5.28, and

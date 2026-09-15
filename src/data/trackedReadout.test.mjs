@@ -210,6 +210,17 @@ test('selection lifecycle ignores vessels, accepts installations, and clears wit
     assert.equal(getActiveTrackedReadoutId(), 'alpr:42');
     assert.equal(recorder.calls.filter(({ op }) => op === 'set').at(-1).entries[0].title, 'FLOCK SAFETY ALPR');
 
+    const hotel = {
+      gevTrackedId: 'panamaoficial:hotel:1',
+      gevDisplayPosition: () => ({ x: 7, y: 8, z: 9 }),
+      gevLabelModel: { title: 'HOTEL CENTRAL', details: ['PANAMÁ OFICIAL'], accent: '#36dcff' },
+    };
+    fakeWindow.dispatchEvent(new CustomEvent('gev:entity-selected', {
+      detail: { layerId: 'panama-official-hotels', entity: hotel },
+    }));
+    assert.equal(getActiveTrackedReadoutId(), 'panamaoficial:hotel:1');
+    assert.equal(recorder.calls.filter(({ op }) => op === 'set').at(-1).entries[0].title, 'HOTEL CENTRAL');
+
     fakeWindow.dispatchEvent(new CustomEvent('gev:entity-selected', {
       detail: { layerId: 'ais-live-vessels', entity: installation },
     }));
