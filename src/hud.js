@@ -8,8 +8,9 @@ import { applicationServices } from './services/application.js';
  * (GSD, NIIRS, ONA), timestamps, and orbital data — all updating in
  * real-time at configurable cadences.
  *
- * The HUD auto-activates when a military-style shader (NVG, FLIR, CRT) is
- * selected and supports three layout variants: tactical, operator, minimal.
+ * The reusable component supports three legacy layout variants. The production
+ * application constructs it with `disabled: true`, so it creates no markup,
+ * listeners, timers, or visible intelligence overlay.
  *
  * Color theming is driven by the active shader mode via CSS custom properties.
  */
@@ -66,14 +67,24 @@ export class IntelHUD {
    * @param {Cesium.Viewer} viewer - The Cesium Viewer instance used for
    *   camera telemetry and coordinate derivation.
    */
-  constructor(viewer, { placeSearch, summaryPolicy = {}, basemapContext = {}, summaryService = applicationServices.summary } = {}) {
+  constructor(
+    viewer,
+    {
+      placeSearch,
+      summaryPolicy = {},
+      basemapContext = {},
+      summaryService = applicationServices.summary,
+      disabled = false,
+    } = {},
+  ) {
     this.summaryService = summaryService;
     this.summaryPolicy = summaryPolicy;
     this.basemapContext = basemapContext;
     this.placeSearch = placeSearch;
     this.viewer = viewer;
+    this._disabled = disabled === true;
     this._visible = false;
-    this._autoMode = true; // auto show/hide based on style
+    this._autoMode = !this._disabled; // auto show/hide based on style
     this._currentStyle = 'normal';
     this._el = null;
     this._variant = 'tactical';
@@ -134,9 +145,11 @@ export class IntelHUD {
     this._orbitNum = 47000 + Math.floor(Math.random() * 1000);
     this._passNum = 100 + Math.floor(Math.random() * 200);
 
-    this._buildDOM();
-    this.viewer.camera.moveEnd.addEventListener(this._onCameraMoveEnd);
-    this._startTimers();
+    if (!this._disabled) {
+      this._buildDOM();
+      this.viewer.camera.moveEnd.addEventListener(this._onCameraMoveEnd);
+      this._startTimers();
+    }
   }
 
   /**
@@ -729,6 +742,10 @@ export class IntelHUD {
    */
   onStyleChange(styleName) {
     this._currentStyle = styleName;
+    if (this._disabled) {
+      this.hide();
+      return;
+    }
 
     // Update mode label
     const modeEl = document.getElementById('hud-mode');
@@ -756,11 +773,16 @@ export class IntelHUD {
 
   /** Make the HUD visible and immediately refresh all readouts. */
   show() {
+    if (this._disabled) {
+      this.hide();
+      return false;
+    }
     this._visible = true;
     if (this._el) this._el.classList.add('active');
     this._updateCameraData(); // immediate update
     this._markSummaryDirty();
     void this._updateSummary(false, true);
+    return true;
   }
 
   /** Hide the HUD overlay. */
@@ -771,6 +793,10 @@ export class IntelHUD {
 
   /** Toggle HUD visibility and disable auto-mode (user override). */
   toggle() {
+    if (this._disabled) {
+      this.hide();
+      return false;
+    }
     if (this._visible) {
       this._autoMode = false; // user override
       this.hide();
@@ -778,6 +804,7 @@ export class IntelHUD {
       this._autoMode = false;
       this.show();
     }
+    return this._visible;
   }
 
   /**
@@ -786,15 +813,21 @@ export class IntelHUD {
    *   show/hide; `'on'`/`'off'` force visibility and disable auto-mode.
    */
   setMode(mode) {
+    if (this._disabled) {
+      this._autoMode = false;
+      this.hide();
+      return false;
+    }
     if (mode === 'auto') {
       this._autoMode = true;
       this.onStyleChange(this._currentStyle);
-      return;
+      return this._visible;
     }
 
     this._autoMode = false;
     if (mode === 'on') this.show();
     else this.hide();
+    return this._visible;
   }
 
   /**
@@ -822,6 +855,7 @@ export class IntelHUD {
    *   show/hide is active, otherwise the explicit visibility override.
    */
   getMode() {
+    if (this._disabled) return 'off';
     if (this._autoMode) return 'auto';
     return this._visible ? 'on' : 'off';
   }
@@ -835,6 +869,10 @@ export class IntelHUD {
     if (this._dataManagerUnsubscribe) {
       this._dataManagerUnsubscribe();
       this._dataManagerUnsubscribe = null;
+    }
+    if (this._disabled) {
+      this._dataManager = null;
+      return;
     }
     this._dataManager = dataManager || null;
     if (typeof this._dataManager?.subscribe === 'function') {
@@ -852,7 +890,9 @@ export class IntelHUD {
     clearInterval(this._timestampInterval);
     clearInterval(this._summaryInterval);
     clearInterval(this._summaryTypingInterval);
-    this.viewer.camera.moveEnd.removeEventListener(this._onCameraMoveEnd);
+    if (!this._disabled) {
+      this.viewer.camera.moveEnd.removeEventListener(this._onCameraMoveEnd);
+    }
     this._dataManagerUnsubscribe?.();
     this._summaryRequest?.abort();
   }

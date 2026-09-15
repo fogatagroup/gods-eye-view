@@ -53,7 +53,6 @@ function shortcuts() {
   const names = [
     'setStyle',
     'dismissSearch',
-    'toggleHud',
     'toggleOrbit',
     'toggleCleanView',
     'toggleLayers',
@@ -91,7 +90,6 @@ test('letter shortcuts retain uppercase handling and existing actions', () => {
   assert.deepEqual(
     f.calls,
     [
-      'toggleHud',
       'toggleOrbit',
       'toggleCleanView',
       'toggleLayers',
@@ -119,25 +117,25 @@ test('the supplied search target retains editing even without form markup', () =
   assert.deepEqual(f.calls, [['dismissSearch']]);
 });
 
-test('shortcut extraction does not change repeat or modifier policy', () => {
+test('the retired HUD shortcut is inert regardless of repeat or modifiers', () => {
   const f = shortcuts();
   f.press('h', new Element(), { repeat: true, ctrlKey: true });
-  assert.deepEqual(f.calls, [['toggleHud']]);
+  assert.deepEqual(f.calls, []);
 });
 
 test('destroy synchronously removes shortcuts and a replacement binds once', () => {
   const f = shortcuts();
   f.controller.destroy();
   f.controller.destroy();
-  f.press('h');
+  f.press('o');
   assert.deepEqual(f.calls, []);
   assert.equal(f.documentRef.listeners.get('keydown').size, 0);
   const replacement = bindApplicationShortcuts({
     documentRef: f.documentRef,
     searchInput: f.searchInput,
-    actions: { toggleHud: () => f.calls.push('new') },
+    actions: { toggleOrbit: () => f.calls.push('new') },
   });
-  f.press('h');
+  f.press('o');
   assert.deepEqual(f.calls, ['new']);
   replacement.destroy();
 });

@@ -234,7 +234,7 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
   assert.match(html, /id="cockpit-display-toggle-btn"[^>]*aria-controls="cockpit-display-panel"/);
   assert.match(html, /id="cockpit-display-toggle-btn"[^>]*>◀<\/button>/);
   assert.match(html, /data-cockpit-launcher="display"[\s\S]*?id="cockpit-display-toggle-btn"/);
-  assert.match(html, /data-cockpit-display-slot="hud"/);
+  assert.doesNotMatch(html, /data-cockpit-display-slot="hud"/);
   assert.match(html, /data-cockpit-display-slot="detection"[\s\S]*?data-cockpit-display-slot="parameters"[\s\S]*?data-cockpit-display-slot="models3d"/);
   assert.doesNotMatch(html, /data-cockpit-display-slot="presets"/);
   assert.match(html, /id="clear-selected-layers"[^>]*aria-label="Clear selected data layers"/);
@@ -249,7 +249,8 @@ test('Cockpit owns a focused shared Display portal and compact Radio controls', 
   assert.match(sceneDirector, /this\._running = true;\s*this\._setPlaybackActive\(true\);/);
   assert.match(sceneDirector, /styleManager\.setRecordingMode\(false\);\s*this\._setPlaybackActive\(false\);/);
   assert.match(SceneControls.prototype.setPlaybackActive.toString(), /document\.body\.classList\.toggle\('scene-playback-mode', active\)/);
-  assert.equal((html.match(/id="hud-toggle"/g) || []).length, 1, 'HUD control must have one stateful DOM owner');
+  assert.equal((html.match(/id="hud-toggle"/g) || []).length, 0, 'retired HUD control must not be rendered');
+  assert.doesNotMatch(html, /id="intel-hud"/, 'retired intelligence HUD must not have a DOM mount');
   assert.equal((html.match(/id="detection-toggle"/g) || []).length, 1, 'Detection control must have one stateful DOM owner');
   assert.equal((html.match(/id="models3d-toggle"/g) || []).length, 1, '3D control must have one stateful DOM owner');
   assert.doesNotMatch(html, /id="cockpit-(?:hud|detection|models3d)-toggle"/);
@@ -649,11 +650,12 @@ test('Cockpit side rulers stay behind interactive panel surfaces', () => {
   assert.ok(Number(utilities[1]) > Number(sideRuler[1]));
 });
 
-test('Cockpit Display portals shared HUD, Detection, Parameters, and 3D controls', () => {
+test('Cockpit Display portals shared Detection, Parameters, and 3D controls', () => {
   assert.match(
     ui,
-    /_initCockpitDisplayPortal\(\) \{[\s\S]*?\['hud', this\._hudBtn\?\.closest[\s\S]*?\['detection', this\._detectionBtn\?\.closest[\s\S]*?\['parameters', this\._sliderPanel\][\s\S]*?\['models3d', this\._models3dBtn\?\.closest/,
+    /_initCockpitDisplayPortal\(\) \{[\s\S]*?\['detection', this\._detectionBtn\?\.closest[\s\S]*?\['parameters', this\._sliderPanel\][\s\S]*?\['models3d', this\._models3dBtn\?\.closest/,
   );
+  assert.doesNotMatch(ui, /\['hud', this\._hudBtn/);
   assert.doesNotMatch(ui, /\['presets',/);
   assert.match(
     CockpitDisplayPortal.toString(),

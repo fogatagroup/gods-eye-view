@@ -11,22 +11,18 @@ function element(value = '') {
 
 test('controls read current values without preventing native input behavior', () => {
   const bloomSlider = element('24');
-  const hudLayout = element('tactical');
   const calls = [];
   const control = bindDisplayControls({
-    elements: { bloomSlider, hudLayout },
+    elements: { bloomSlider },
     actions: {
       setBloomIntensity: (value) => calls.push(value),
-      setHudLayout: (value) => calls.push(value),
     },
   });
   const event = new Event('input', { cancelable: true });
   bloomSlider.dispatchEvent(event);
   bloomSlider.value = '37';
   bloomSlider.dispatchEvent(new Event('input'));
-  hudLayout.value = 'minimal';
-  hudLayout.dispatchEvent(new Event('change'));
-  assert.deepEqual(calls, [24, 37, 'minimal']);
+  assert.deepEqual(calls, [24, 37]);
   assert.equal(event.defaultPrevented, false);
   control.destroy();
 });

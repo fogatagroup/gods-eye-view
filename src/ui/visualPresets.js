@@ -44,8 +44,6 @@ export const MILITARY_DETECTION_PRESET = Object.freeze({
 export const GLOBAL_POST_DEFAULTS = {
   bloom: { enabled: false, intensity: BLOOM_INTENSITY_DEFAULT },
   sharpen: { enabled: true, intensity: 49 },
-  hudVariant: 'tactical',
-  hudVisible: true,
   // Detection is ON for EVERY style on a first run, Normal included (owner
   // directive 2026-08-22: "detect should also be on by default"). It is the
   // same preset object the military styles and Contacts already apply, so there
@@ -77,8 +75,6 @@ export const STYLE_PRESET_DEFAULTS = {
         instability: 0.42,
       },
     },
-    hudVariant: 'tactical',
-    hudVisible: true,
     detection: MILITARY_DETECTION_PRESET,
   },
   surveillance: {
@@ -92,8 +88,6 @@ export const STYLE_PRESET_DEFAULTS = {
         pixelation: 1.0,
       },
     },
-    hudVariant: 'tactical',
-    hudVisible: true,
     detection: MILITARY_DETECTION_PRESET,
   },
   thermal: {
@@ -107,8 +101,6 @@ export const STYLE_PRESET_DEFAULTS = {
         pixelation: 1.0,
       },
     },
-    hudVariant: 'tactical',
-    hudVisible: true,
     detection: MILITARY_DETECTION_PRESET,
   },
 };

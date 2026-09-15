@@ -1390,7 +1390,7 @@ export class VisualSettings {
   }
 
   _updateHudButtonState() {
-    this._hudBtn.classList.toggle('active', this.hud.visible);
+    this._hudBtn?.classList.toggle('active', this.hud.visible);
     if (this._hudLayoutRow) {
       this._hudLayoutRow.classList.toggle('visible', this.hud.visible);
     }

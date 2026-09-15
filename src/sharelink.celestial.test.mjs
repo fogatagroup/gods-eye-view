@@ -424,15 +424,13 @@ test('newer visual, map, and individual panel actions suppress only their owned 
 test('every explicit visual UI gesture claims restore authority before it mutates state', () => {
   const initUi = sourceBlock('  _initUI() {', '  _initMapStackControl() {');
   const gestureRoutes = [
-    ['toggleHud: () => {', 'toggleOrbit: () =>', 'this.hud.toggle()', 'HUD hotkey'],
     ['cycleDetection: () => {', 'toggleCctv: () =>', 'cycleDetectionMode()', 'detection hotkey'],
     ['toggleBloom:', 'setBloomIntensity:', 'this._setBloomEnabled(', 'toggleBloom control'],
     ['setBloomIntensity:', 'toggleSharpen:', 'this._setBloomIntensity(', 'setBloomIntensity control'],
     ['toggleSharpen:', 'toggleScope:', 'this._setSharpenEnabled(', 'toggleSharpen control'],
     ['toggleScope:', 'setScopeFeather:', 'setScopeMaskEnabled(', 'toggleScope control'],
     ['setScopeFeather:', 'setSharpenIntensity:', 'setScopeMaskFeather(', 'setScopeFeather control'],
-    ['setSharpenIntensity:', 'setHudLayout:', 'this._applySharpenIntensity(', 'setSharpenIntensity control'],
-    ['setHudLayout:', 'toggleCleanView:', 'this._setHudVariant(', 'setHudLayout control'],
+    ['setSharpenIntensity:', 'toggleCleanView:', 'this._applySharpenIntensity(', 'setSharpenIntensity control'],
     ['setDensity:', 'setAllocation:', 'this._applyDetectionDensityFromUi()', 'setDensity control'],
     ['setAllocation:', 'setFade:', 'this._setDetectionAllocation(', 'setAllocation control'],
     ['setFade:', 'toggleCelestial:', 'this._applyDetectionFadeFromUi()', 'setFade control'],
@@ -445,7 +443,6 @@ test('every explicit visual UI gesture claims restore authority before it mutate
   }
 
   const displayActions = initUi.slice(initUi.indexOf('this._displayControls ='));
-  assertClaimsBefore(displayActions.slice(displayActions.indexOf('toggleHud:'), displayActions.indexOf('cycleDetection:')), 'this.hud.toggle()', 'HUD button');
   assertClaimsBefore(displayActions.slice(displayActions.indexOf('cycleDetection:'), displayActions.indexOf('toggleModels:')), 'cycleDetectionMode()', 'detection button');
 
 });
@@ -537,8 +534,6 @@ test('Context lane claims never set the session detection-override flag', () => 
 
 test('every explicit visual control facade claims restore authority before mutation', () => {
   const facadeRoutes = [
-    ['  setHudVisible(mode) {', '  setHudLayout(variantName) {', 'this.hud.setMode(', 'setHudVisible'],
-    ['  setHudLayout(variantName) {', '  getDetectionState() {', 'this._setHudVariant(', 'setHudLayout'],
     ['  setDetection({ enabled, mode, densityPct, allocationStrategy, fadePct, outsideOpacityPct } = {}) {', '  async setMapStack(stackId) {', 'this._setDetectionAllocation(', 'setDetection'],
     ['  setBloom({ enabled, intensityPct } = {}) {', '  setSharpen({ enabled, intensityPct } = {}) {', 'this._setBloomIntensity(', 'setBloom'],
     ['  setSharpen({ enabled, intensityPct } = {}) {', '  get celestialRingEnabled() {', 'this._applySharpenIntensity(', 'setSharpen'],
@@ -552,6 +547,25 @@ test('every explicit visual control facade claims restore authority before mutat
   assertClaimsBefore(style, 'this.activeStyle = styleName', 'setStyle');
   const sliders = sourceBlock('  _updateSliderPanel(styleName, { reveal = false } = {}) {', '  _revealStyleParameters() {');
   assertClaimsBefore(sliders, 'this.stages[styleName].uniforms[uName] = val', 'style parameter slider');
+});
+
+test('the retired intelligence HUD cannot be reactivated through the public facade', () => {
+  const construction = sourceBlock(
+    '    this.hud = new IntelHUD(viewer, {',
+    '    this._recording.hud = this.hud;',
+  );
+  assert.match(construction, /disabled:\s*true/);
+
+  for (const [start, end, label] of [
+    ['  setHudVisible(mode) {', '  setHudLayout(variantName) {', 'visibility'],
+    ['  setHudLayout(variantName) {', '  getDetectionState() {', 'layout'],
+  ]) {
+    const block = sourceBlock(start, end);
+    assert.match(block, /ok:\s*false/);
+    assert.match(block, /visible:\s*false/);
+    assert.match(block, /Intel HUD is unavailable/);
+    assert.doesNotMatch(block, /this\.hud\.(?:show|toggle|setMode|setVariant)/, `${label} facade must not reactivate the HUD`);
+  }
 });
 
 test('public visual facades reject the complete invalid request before authority or mutation', () => {

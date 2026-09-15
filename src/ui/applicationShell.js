@@ -304,6 +304,7 @@ export class StyleManager {
     this.hud = new IntelHUD(viewer, {
       placeSearch,
       summaryService: requestServices?.summary,
+      disabled: true,
     });
     this._recording.hud = this.hud;
     // True only while the open Data Layers panel is the reason Cockpit's
@@ -381,8 +382,6 @@ export class StyleManager {
           bloomIntensity,
           bloomVersion,
           sharpenIntensity,
-          hudVariant,
-          hudVisible,
           detectionMode,
           detectionDensity,
           detectionAllocation,
@@ -430,11 +429,6 @@ export class StyleManager {
         }
         if (typeof bloom === 'boolean') this._setBloomEnabled(bloom);
         if (typeof sharpen === 'boolean') this._setSharpenEnabled(sharpen);
-        if (hudVariant) this._setHudVariant(hudVariant);
-        if (typeof hudVisible === 'boolean') {
-          this.hud.setMode(hudVisible ? 'on' : 'off');
-          this._updateHudButtonState();
-        }
         if (
           typeof detectionDensity === 'number' &&
           this._detectionDensitySlider
@@ -1146,12 +1140,6 @@ export class StyleManager {
             this._locationSearch.blur();
           }
         },
-        toggleHud: () => {
-          this.shareLinkManager?.claimRestoreLane?.('visual');
-          this.hud.toggle();
-          this._updateHudButtonState();
-          this._syncShareState();
-        },
         toggleOrbit: () => this._toggleOrbit(),
         toggleCleanView: () => this.toggleCleanView(),
         toggleLayers: () =>
@@ -1176,8 +1164,6 @@ export class StyleManager {
         sharpenSlider: this._sharpenSlider,
         scopeButton: this._scopeBtn,
         scopeFeatherSlider: this._scopeFeatherSlider,
-        hudLayout: this._hudLayoutSelect,
-        hudButton: this._hudBtn,
         cleanViewButton: this._cleanViewBtn,
         cleanViewExitButton: this._cleanViewExitBtn,
         densitySlider: this._detectionDensitySlider,
@@ -1225,10 +1211,6 @@ export class StyleManager {
           this._applySharpenIntensity(pct / 100);
           this._syncShareState();
         },
-        setHudLayout: (value) => {
-          this.shareLinkManager?.claimRestoreLane?.('visual');
-          this._setHudVariant(value);
-        },
         toggleCleanView: () => this.toggleCleanView(),
         exitCleanView: () => this.toggleCleanView(false),
         setDensity: (value) => {
@@ -1258,12 +1240,6 @@ export class StyleManager {
           } else {
             this.setCelestialRingEnabled(false);
           }
-        },
-        toggleHud: () => {
-          this.shareLinkManager?.claimRestoreLane?.('visual');
-          this.hud.toggle();
-          this._updateHudButtonState();
-          this._syncShareState();
         },
         cycleDetection: () => {
           this.shareLinkManager?.claimRestoreLane?.('visual');
@@ -2152,20 +2128,7 @@ export class StyleManager {
    * @returns {{ok: boolean, visible?: boolean, layout?: string, error?: string}}
    */
   setHudVisible(mode) {
-    const normalized = String(mode ?? '').toLowerCase();
-    if (!['on', 'off', 'auto'].includes(normalized)) {
-      return { ok: false, error: `Unknown HUD visibility mode: ${mode}` };
-    }
-    this.shareLinkManager?.claimRestoreLane?.('visual');
-    this.hud.setMode(normalized);
-    this._updateHudButtonState();
-    this._syncShareState();
-    return {
-      ok: true,
-      visible: !!this.hud.visible,
-      mode: normalized,
-      layout: this.hud.getVariant(),
-    };
+    return { ok: false, visible: false, error: 'Intel HUD is unavailable' };
   }
 
   /**
@@ -2174,17 +2137,7 @@ export class StyleManager {
    * @returns {{ok: boolean, layout?: string, visible?: boolean, error?: string}}
    */
   setHudLayout(variantName) {
-    const variant = String(variantName ?? '').toLowerCase();
-    if (!['tactical', 'operator', 'minimal'].includes(variant)) {
-      return { ok: false, error: `Unknown HUD layout: ${variantName}` };
-    }
-    this.shareLinkManager?.claimRestoreLane?.('visual');
-    this._setHudVariant(variant);
-    return {
-      ok: true,
-      layout: this.hud.getVariant(),
-      visible: !!this.hud.visible,
-    };
+    return { ok: false, visible: false, error: 'Intel HUD is unavailable' };
   }
 
   /**
@@ -3486,12 +3439,7 @@ export class StyleManager {
   }
 
   _initHUDToggle() {
-    if (this._hudLayoutSelect) {
-      this._hudLayoutSelect.value = 'tactical';
-    }
-    this._setHudVariant('tactical');
-    this.hud.setMode('on');
-    this._updateHudButtonState();
+    this.hud.setMode('off');
 
     this._lifetime.listen(this._cockpitDisplayToggleBtn, 'click', () => {
       const open =
@@ -3513,7 +3461,6 @@ export class StyleManager {
       standardPanel: this._ppToggles,
       cockpitPanel: this._cockpitDisplayPanel,
       groups: [
-        ['hud', this._hudBtn?.closest('.pp-toggle-group')],
         ['detection', this._detectionBtn?.closest('.pp-toggle-group')],
         ['parameters', this._sliderPanel],
         ['models3d', this._models3dBtn?.closest('.pp-toggle-group')],

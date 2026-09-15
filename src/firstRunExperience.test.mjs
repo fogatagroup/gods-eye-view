@@ -524,10 +524,10 @@ test('the voice TOOL SCHEMA matches the pinned Quantifeye World release', () => 
   // ordering while allowing source formatting. Derived from the unchanged
   // release schema before formatting (the previous source-byte pin passed).
   const block = JSON.stringify(GEV_REALTIME_TOOLS);
-  assert.equal(block.length, 26646, 'serialized tool schema length drifted');
+  assert.equal(block.length, 26264, 'serialized tool schema length drifted');
   assert.equal(
     crypto.createHash('sha256').update(block).digest('hex'),
-    '9a2cc4651313301c377f0da0a1936e049c75148a45bbb146a3f27354f7ba6d05',
+    'cb5a20762b5f24df0e08bb65ff9972343af2aad65c9b67f24b0ebf9afcd9cff4',
     'the branded Realtime tool schema drifted',
   );
   const instructions = fs.readFileSync(new URL('../server/providers/openai/instructions.js', import.meta.url), 'utf8');

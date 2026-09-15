@@ -343,29 +343,11 @@ const GEV_REALTIME_TOOLS = [
     type: 'function',
     name: 'get_current_view_state',
     description:
-      'Read the current camera, style, Context, Cockpit, HUD, detection, map stack, post-processing, scene-playback, tracked-entity, and layer state before choosing another action.',
+      'Read the current camera, style, Context, Cockpit, detection, map stack, post-processing, scene-playback, tracked-entity, and layer state before choosing another action.',
     parameters: {
       type: 'object',
       additionalProperties: false,
       properties: {},
-    },
-  },
-  {
-    type: 'function',
-    name: 'set_hud',
-    description:
-      'Control the intelligence HUD overlay: visibility and/or layout variant.',
-    parameters: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        visible: {
-          type: 'string',
-          enum: ['on', 'off', 'auto'],
-          description: 'auto restores style-driven show/hide.',
-        },
-        layout: { type: 'string', enum: ['tactical', 'operator', 'minimal'] },
-      },
     },
   },
   {

@@ -114,6 +114,24 @@ test('hud.js corrects the camera height to MSL through the geoid module', () => 
   );
 });
 
+test('a disabled intelligence HUD stays inert even when legacy callers request it', () => {
+  const env = installHudEnvironment();
+  try {
+    const hud = new IntelHUD(env.viewer, { disabled: true });
+    assert.equal(hud.visible, false);
+    assert.equal(hud.getMode(), 'off');
+    assert.equal(hud.show(), false);
+    assert.equal(hud.toggle(), false);
+    assert.equal(hud.setMode('on'), false);
+    hud.onStyleChange('surveillance');
+    assert.equal(hud.visible, false);
+    assert.equal(hud.getMode(), 'off');
+    hud.destroy();
+  } finally {
+    env.restore();
+  }
+});
+
 test('the corner ALT readout prints the MSL height, never the ellipsoidal one', () => {
   assert.equal(
     has(/const geoidN = this\._geoidUndulationM\(latDeg, lonDeg\);/),
