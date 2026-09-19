@@ -127,13 +127,21 @@ test('terrain middleware migrates valid legacy disk points without fabricating o
 });
 
 test('traffic middleware preserves keyless mode, caching, stale budget fallback and UTC rollover', async (t) => {
-  isolate(t, { TOMTOM_API_KEY: '', TOMTOM_DAILY_TILE_BUDGET: '1' });
+  isolate(t, {
+    TOMTOM_API_KEY: '',
+    TOMTOM_DAILY_TILE_BUDGET: '1',
+    TOMTOM_REFERER: 'https://world.example.test/',
+  });
   let now = Date.UTC(2026, 8, 12, 12);
   t.mock.method(Date, 'now', () => now);
   let calls = 0;
-  t.mock.method(globalThis, 'fetch', async (raw) => {
+  t.mock.method(globalThis, 'fetch', async (raw, options) => {
     calls++;
     assert.equal(new URL(raw).searchParams.get('key'), 'fixture-key');
+    assert.deepEqual(options.headers, {
+      Referer: 'https://world.example.test/',
+      Origin: 'https://world.example.test',
+    });
     return new Response(new Uint8Array([1, 2, 3]));
   });
   const request = install(tomtomProxy());

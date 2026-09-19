@@ -135,7 +135,17 @@ export function tomtomProxy() {
       'https://api.tomtom.com/traffic/map/4/tile/flow/relative/' +
       `${z}/${x}/${y}.pbf?key=${encodeURIComponent(process.env.TOMTOM_API_KEY)}`;
     recordUpstreamFetch(); // attempts count — upstream bills the request either way
+    const configuredReferer = String(process.env.TOMTOM_REFERER || '').trim();
+    let headers;
+    if (configuredReferer) {
+      const referer = new URL(configuredReferer);
+      headers = {
+        Referer: referer.href,
+        Origin: referer.origin,
+      };
+    }
     const res = await fetch(url, {
+      headers,
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
