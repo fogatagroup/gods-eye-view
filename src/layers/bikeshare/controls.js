@@ -10,6 +10,8 @@ export function createControls({ state: layerState, services, parts, source }) {
 
     source: 'GBFS',
 
+    showInTogglePanel: false,
+
     updateInterval: STATUS_POLL_MS,
 
     /**

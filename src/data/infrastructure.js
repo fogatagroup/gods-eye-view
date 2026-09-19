@@ -37,6 +37,7 @@ export function createInfrastructureLayers(services) {
       color: '#0088ff', // Blue
       icon: '▰',
       source: 'USACE',
+      showInTogglePanel: false,
       labels: true,
       labelMax: 900,
       labelGridPx: 132,

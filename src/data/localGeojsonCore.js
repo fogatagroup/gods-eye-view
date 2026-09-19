@@ -321,6 +321,7 @@ export function createLocalGeoJsonLayer(
     color,
     icon = '📍',
     source = 'Local JSONL',
+    showInTogglePanel = true,
     labels = true,
     labelMax = DEFAULT_LABEL_MAX,
     labelGridPx = DEFAULT_LABEL_GRID_PX,
@@ -493,6 +494,7 @@ export function createLocalGeoJsonLayer(
     name,
     icon,
     source,
+    showInTogglePanel,
     updateInterval: 0,
     statsRefreshInterval: 1000,
 

@@ -12,6 +12,8 @@ export function createControls({ state: layerState, services, parts, source }) {
 
     source: 'OpenStreetMap + optional Google Maps Places',
 
+    showInTogglePanel: false,
+
     updateInterval: 0,
 
     statsRefreshInterval: 1000,

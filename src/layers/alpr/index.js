@@ -235,6 +235,7 @@ export function createAlprCamerasLayer({ source, services } = {}) {
     name: 'ALPR Cameras',
     icon: '📷',
     source: source.label || 'Mapped camera locations',
+    showInTogglePanel: false,
     updateInterval: 0,
     statsRefreshInterval: 1000,
     init(viewer) {

@@ -8,6 +8,8 @@ export function createControls({ state: layerState, services, parts, source }) {
 
     source: 'Radio Browser',
 
+    showInTogglePanel: false,
+
     updateInterval: 45 * 60 * 1000,
 
     /** Apply the manager-owned lifecycle gate to visible and pickable Radio state. */

@@ -42,6 +42,20 @@ test('catalogs construct distinct layers and classification from their supplied 
   assert.ok(first.get('administrative-divisions'));
   assert.deepEqual(
     first.layers
+      .filter(({ showInTogglePanel }) => showInTogglePanel === false)
+      .map(({ id }) => id)
+      .sort(),
+    [
+      'alpr-cameras',
+      'bikeshare',
+      'local-dams',
+      'military-awareness',
+      'military-installations',
+      'radio',
+    ],
+  );
+  assert.deepEqual(
+    first.layers
       .filter(({ id }) => id.startsWith('panama-official-'))
       .map(({ id }) => id),
     [
