@@ -138,7 +138,7 @@ const GEV_REALTIME_TOOLS = [
         layerId: {
           type: 'string',
           description:
-            'Common-name mapping for the non-obvious ids: space mission(s) → rocket-launches; fires/wildfires/active fires → local-firms (NASA FIRMS); ships/vessels/boats → ais-live-vessels; Panamá Oficial hotels → panama-official-hotels; Panamá Oficial agencies/operators → panama-official-agencies; Panamá Oficial tourism/attractions → panama-official-tourism; undersea/submarine cables → telegeography-submarine-cables; datacenters → local-datacenters; dams → local-dams; bikes/bike share → bikeshare; street traffic/congestion → traffic; traffic cameras → cctv; internet radio/stations → radio; ALPR/license plate readers/Flock cameras → alpr-cameras.',
+            'Common-name mapping for the non-obvious ids: space mission(s) → rocket-launches; fires/wildfires/active fires → local-firms (NASA FIRMS); ships/vessels/boats → ais-live-vessels; Panamá Oficial hotels → panama-official-hotels; Panamá Oficial agencies/operators → panama-official-agencies; Panamá Oficial tourism/attractions → panama-official-tourism; coastal flood/inundación costera → coastal-flood-2050; undersea/submarine cables → telegeography-submarine-cables; datacenters → local-datacenters; dams → local-dams; bikes/bike share → bikeshare; street traffic/congestion → traffic; traffic cameras → cctv; internet radio/stations → radio; ALPR/license plate readers/Flock cameras → alpr-cameras.',
           enum: [
             'flights',
             'military',
@@ -158,6 +158,7 @@ const GEV_REALTIME_TOOLS = [
             'panama-official-hotels',
             'panama-official-agencies',
             'panama-official-tourism',
+            'coastal-flood-2050',
           ],
         },
         enabled: { type: 'boolean' },
@@ -194,6 +195,7 @@ const GEV_REALTIME_TOOLS = [
             'panama-official-hotels',
             'panama-official-agencies',
             'panama-official-tourism',
+            'coastal-flood-2050',
           ],
           description: 'Optional layer row to scroll into view and highlight.',
         },
@@ -328,6 +330,7 @@ const GEV_REALTIME_TOOLS = [
             'panama-official-hotels',
             'panama-official-agencies',
             'panama-official-tourism',
+            'coastal-flood-2050',
           ],
           description: 'Optional layer filter for visible entity context.',
         },

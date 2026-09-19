@@ -190,6 +190,9 @@ const LAYER_ALIASES = new Map([
   ['panama oficial tourism', 'panama-official-tourism'],
   ['panama official tourism', 'panama-official-tourism'],
   ['turismo de panama oficial', 'panama-official-tourism'],
+  ['coastal flood', 'coastal-flood-2050'],
+  ['coastal flood 2050', 'coastal-flood-2050'],
+  ['inundacion costera', 'coastal-flood-2050'],
 ]);
 
 const CITY_ALIASES = new Map([
@@ -3203,6 +3206,7 @@ function layerTitle(layerId) {
   if (layerId === 'panama-official-hotels') return 'Panamá Oficial Hotel';
   if (layerId === 'panama-official-agencies') return 'Panamá Oficial Agency';
   if (layerId === 'panama-official-tourism') return 'Panamá Oficial Place';
+  if (layerId === 'coastal-flood-2050') return 'Coastal Flood Projection';
   return layerId || 'Entity';
 }
 
@@ -3221,7 +3225,7 @@ function clampNumber(value, min, max, fallback) {
  * ("which of those is closest?") scoped to the session.
  */
 /** Layers whose loaded set follows the camera, so a loaded count is not a world count. */
-const VIEWPORT_LOADED_LAYERS = new Set(['flights']);
+const VIEWPORT_LOADED_LAYERS = new Set(['flights', 'coastal-flood-2050']);
 
 /**
  * The Contacts panel's own counts, or null when Contacts has no subject.

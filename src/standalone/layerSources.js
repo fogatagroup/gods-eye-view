@@ -15,6 +15,7 @@ import { createFirmsSource } from '../layers/firms/index.js';
 import { createUsgsEarthquakeSource } from '../layers/earthquakes/source.js';
 import { createBundledCableSource } from '../layers/submarineCables/bundledSource.js';
 import { createPanamaOfficialSource } from '../layers/panamaOfficial/source.js';
+import { createCoastalFloodSource } from '../layers/coastalFlood/source.js';
 
 /** Existing reference feeds, usable independently of live source selection. */
 export function createStandaloneReferenceSources() {
@@ -44,6 +45,9 @@ export function createStandaloneLayerSources() {
     firms: createFirmsSource(),
     panamaOfficial: createPanamaOfficialSource({
       apiBase: import.meta.env?.VITE_PANAMA_OFFICIAL_API_URL,
+    }),
+    coastalFlood: createCoastalFloodSource({
+      serviceUrl: import.meta.env?.VITE_COASTAL_FLOOD_SERVICE_URL,
     }),
   };
 }

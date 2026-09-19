@@ -17,6 +17,7 @@ import { createApplicationFirms } from './layers/firms.js';
 import { createApplicationEarthquakes } from './layers/earthquakes.js';
 import { createApplicationCables } from './layers/submarineCables.js';
 import { createApplicationPanamaOfficial } from './layers/panamaOfficial.js';
+import { createApplicationCoastalFlood } from './layers/coastalFlood.js';
 import { createInfrastructureLayers } from '../data/infrastructure.js';
 import { localGeoJsonServices } from '../data/localGeojson.js';
 
@@ -42,6 +43,7 @@ const SOURCE_METHODS = Object.freeze({
   earthquakes: ['getSnapshot'],
   cables: ['fetch'],
   panamaOfficial: ['getPlaces'],
+  coastalFlood: ['getFeatures'],
 });
 
 /** Construct the current catalog without choosing any source provider.
@@ -121,6 +123,7 @@ export function createApplicationCatalog({
         }),
         ...createInfrastructureLayers(localGeoJsonServices),
         ...createApplicationPanamaOfficial({ source: sources.panamaOfficial }),
+        createApplicationCoastalFlood({ source: sources.coastalFlood }),
         createApplicationCables({ source: sources.cables }),
         createApplicationFirms({
           surface,
