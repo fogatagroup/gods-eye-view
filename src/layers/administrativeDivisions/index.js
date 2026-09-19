@@ -54,6 +54,15 @@ function entityCenter(entity) {
   );
 }
 
+function entitySpan(entity) {
+  const hierarchy = entity.polygon?.hierarchy?.getValue(
+    Cesium.JulianDate.now(),
+  );
+  return hierarchy?.positions?.length
+    ? Cesium.BoundingSphere.fromPoints(hierarchy.positions).radius
+    : 0;
+}
+
 function featureProperties(entity) {
   return entity.properties?.getValue(Cesium.JulianDate.now()) || {};
 }
@@ -161,9 +170,10 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
     enabled: false,
     dataSources: new Map(LEVEL_ORDER.map((level) => [level, []])),
     records: new Map(),
+    recordsByFeature: new Map(),
     featureIds: new Map(LEVEL_ORDER.map((level) => [level, new Set()])),
     queryKeys: new Set(),
-    labels: new Map(LEVEL_ORDER.map((level) => [level, []])),
+    labels: new Map(LEVEL_ORDER.map((level) => [level, new Map()])),
     lod: 'province',
     loading: false,
     error: null,
@@ -187,8 +197,8 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
   function styleRecord(record) {
     const { entity, boundary, level } = record;
     const style = LEVEL_STYLES[level];
-    const selected = record.id === state.selectedId;
-    const hovered = record.id === state.hoveredId;
+    const selected = record.logicalId === state.selectedId;
+    const hovered = record.logicalId === state.hoveredId;
     const color = Cesium.Color.fromCssColorString(style.color);
     entity.polygon.material = color.withAlpha(
       selected ? 0.18 : hovered ? 0.1 : style.fillAlpha,
@@ -205,14 +215,20 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
     }
   }
 
+  function styleFeature(logicalId) {
+    for (const record of state.recordsByFeature.get(logicalId) || [])
+      styleRecord(record);
+  }
+
   function setHover(id) {
-    if (state.hoveredId === id) return;
-    const previous = state.records.get(state.hoveredId);
-    state.hoveredId = id;
-    if (previous) styleRecord(previous);
     const next = state.records.get(id);
+    const logicalId = next?.logicalId || null;
+    if (state.hoveredId === logicalId) return;
+    const previousId = state.hoveredId;
+    state.hoveredId = logicalId;
+    if (previousId) styleFeature(previousId);
     if (next) {
-      styleRecord(next);
+      styleFeature(logicalId);
       overlayHost.setEntries(
         HOVER_SOURCE,
         [
@@ -238,12 +254,12 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
   }
 
   function selectRecord(id) {
-    if (!state.records.has(id)) return;
-    const previous = state.records.get(state.selectedId);
-    state.selectedId = id;
-    if (previous) styleRecord(previous);
     const record = state.records.get(id);
-    styleRecord(record);
+    if (!record) return;
+    const previousId = state.selectedId;
+    state.selectedId = record.logicalId;
+    if (previousId) styleFeature(previousId);
+    styleFeature(record.logicalId);
     context.selectEntityContext(record.entity);
     render.governorRequestRender('administrative-selection');
   }
@@ -272,7 +288,9 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
 
   function publishLabels() {
     if (!state.enabled) return;
-    const entries = state.labels.get(state.lod) || [];
+    const entries = [...(state.labels.get(state.lod)?.values() || [])].map(
+      ({ entry }) => entry,
+    );
     overlayHost.setEntries(LABEL_SOURCE, entries, {
       cohortLimit:
         state.lod === 'province' ? 24 : state.lod === 'district' ? 70 : 100,
@@ -318,8 +336,10 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
       }),
     );
     const center = entityCenter(entity);
+    const logicalId = `administrative:${level}:${properties.OBJECTID ?? properties.__adminCode ?? properties.__adminName}`;
     const record = {
       id: String(entity.id),
+      logicalId,
       entity,
       boundary,
       center,
@@ -340,7 +360,17 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
     });
     state.records.set(record.id, record);
     for (const line of boundary) state.records.set(String(line.id), record);
-    if (center) state.labels.get(level).push(labelEntry(record));
+    const group = state.recordsByFeature.get(logicalId) || [];
+    group.push(record);
+    state.recordsByFeature.set(logicalId, group);
+    if (center) {
+      const span = entitySpan(entity);
+      const current = state.labels.get(level).get(logicalId);
+      if (!current || span > current.span)
+        state.labels
+          .get(level)
+          .set(logicalId, { span, entry: labelEntry(record) });
+    }
     styleRecord(record);
     return record;
   }
@@ -398,9 +428,10 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
     }
     const originals = [...dataSource.entities.values];
     for (const entity of originals) {
-      state.featureIds.get(level).add(String(entity.id));
       registerEntity(entity, dataSource, level);
     }
+    for (const feature of unseen)
+      state.featureIds.get(level).add(String(feature.id));
     dataSource.show = state.enabled && isLevelVisible(level);
     state.dataSources.get(level).push(dataSource);
     state.queryKeys.add(key);
@@ -453,9 +484,9 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
   }
 
   function clearSelection({ clearContext = true } = {}) {
-    const previous = state.records.get(state.selectedId);
+    const previousId = state.selectedId;
     state.selectedId = null;
-    if (previous) styleRecord(previous);
+    if (previousId) styleFeature(previousId);
     if (clearContext)
       context.clearSelectedEntityContextForLayer(ADMINISTRATIVE_LAYER_ID);
   }
