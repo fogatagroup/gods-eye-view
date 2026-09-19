@@ -519,15 +519,16 @@ test('the DISPLAY rail starts collapsed on a first run, and a stored choice wins
 // ── Voice: intentional tool-schema contract ─────────────────────────────
 
 test('the voice TOOL SCHEMA matches the pinned Quantifeye World release', () => {
-  // ALPR and Panamá Oficial deliberately add their IDs to the layer menus.
+  // ALPR, Panamá Oficial and Administrative Divisions deliberately add their
+  // IDs to the layer menus.
   // Canonical serialization pins every tool name, description, property and
   // ordering while allowing source formatting. Derived from the unchanged
   // release schema before formatting (the previous source-byte pin passed).
   const block = JSON.stringify(GEV_REALTIME_TOOLS);
-  assert.equal(block.length, 26382, 'serialized tool schema length drifted');
+  assert.equal(block.length, 26564, 'serialized tool schema length drifted');
   assert.equal(
     crypto.createHash('sha256').update(block).digest('hex'),
-    'd42ed4b2ad4562bdeb978f7b7442521bc81dcdd227bbabf63a0773dd18b6d3b5',
+    'c27dbcf5c4e0a86984fe83c1b056c3e6ce58c85c55f67433af3b4e973a13b829',
     'the branded Realtime tool schema drifted',
   );
   const instructions = fs.readFileSync(new URL('../server/providers/openai/instructions.js', import.meta.url), 'utf8');

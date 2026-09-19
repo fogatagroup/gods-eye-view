@@ -178,6 +178,7 @@ const CREDIT_EXPECTATIONS = {
   'local-firms': /FIRMS/i,
   'telegeography-submarine-cables': /TeleGeography/i,
   'coastal-flood-2050': /MIAMBIENTE PANAMÁ/i,
+  'administrative-divisions': /MIAMBIENTE PANAMÁ/i,
   'local-neighborhoods': /DataSF|San Francisco/i,
   'weather-effects': /Open-Meteo/i,
 };

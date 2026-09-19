@@ -16,6 +16,7 @@ import { createUsgsEarthquakeSource } from '../layers/earthquakes/source.js';
 import { createBundledCableSource } from '../layers/submarineCables/bundledSource.js';
 import { createPanamaOfficialSource } from '../layers/panamaOfficial/source.js';
 import { createCoastalFloodSource } from '../layers/coastalFlood/source.js';
+import { createAdministrativeDivisionsSource } from '../layers/administrativeDivisions/source.js';
 
 /** Existing reference feeds, usable independently of live source selection. */
 export function createStandaloneReferenceSources() {
@@ -48,6 +49,9 @@ export function createStandaloneLayerSources() {
     }),
     coastalFlood: createCoastalFloodSource({
       serviceUrl: import.meta.env?.VITE_COASTAL_FLOOD_SERVICE_URL,
+    }),
+    administrativeDivisions: createAdministrativeDivisionsSource({
+      serviceUrl: import.meta.env?.VITE_ADMINISTRATIVE_DIVISIONS_SERVICE_URL,
     }),
   };
 }

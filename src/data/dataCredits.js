@@ -41,6 +41,12 @@ export const DATA_CREDITS = [
       '<a href="https://geoportal.miambiente.gob.pa/server/rest/services/IC_P_2050_SSP585_cb_p50_MI/MapServer/0" target="_blank" rel="noopener">MIAMBIENTE PANAMÁ</a>',
   },
   {
+    key: 'miambiente-administrative-divisions',
+    html:
+      'Official province/comarca, district and corregimiento boundaries: ' +
+      '<a href="https://geoportal.miambiente.gob.pa/server/rest/services/Nodo_Caracteristica_General/MapServer" target="_blank" rel="noopener">MIAMBIENTE PANAMÁ</a>',
+  },
+  {
     key: 'opensky',
     html:
       'Flights: OpenSky Network — Schäfer et al., ' +

@@ -38,7 +38,8 @@ test('catalogs construct distinct layers and classification from their supplied 
     signal: b.signal,
     surface: fixtureSurface(b.signal),
   });
-  assert.equal(first.layers.length, 21);
+  assert.equal(first.layers.length, 22);
+  assert.ok(first.get('administrative-divisions'));
   assert.deepEqual(
     first.layers
       .filter(({ id }) => id.startsWith('panama-official-'))

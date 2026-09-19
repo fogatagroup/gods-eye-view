@@ -193,6 +193,9 @@ const LAYER_ALIASES = new Map([
   ['coastal flood', 'coastal-flood-2050'],
   ['coastal flood 2050', 'coastal-flood-2050'],
   ['inundacion costera', 'coastal-flood-2050'],
+  ['administrative divisions', 'administrative-divisions'],
+  ['political boundaries', 'administrative-divisions'],
+  ['divisiones administrativas', 'administrative-divisions'],
 ]);
 
 const CITY_ALIASES = new Map([
@@ -3207,6 +3210,7 @@ function layerTitle(layerId) {
   if (layerId === 'panama-official-agencies') return 'Panamá Oficial Agency';
   if (layerId === 'panama-official-tourism') return 'Panamá Oficial Place';
   if (layerId === 'coastal-flood-2050') return 'Coastal Flood Projection';
+  if (layerId === 'administrative-divisions') return 'Administrative Division';
   return layerId || 'Entity';
 }
 
