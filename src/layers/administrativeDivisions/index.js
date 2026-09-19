@@ -14,10 +14,10 @@ const PANAMA_BOUNDS = Object.freeze({
 });
 const LEVEL_ORDER = Object.freeze(['province', 'district', 'corregimiento']);
 const LEVEL_STYLES = Object.freeze({
-  province: Object.freeze({ color: '#58e8ff', width: 3.5, fillAlpha: 0.018 }),
-  district: Object.freeze({ color: '#42b8dd', width: 2.2, fillAlpha: 0.012 }),
+  province: Object.freeze({ color: '#ff6000', width: 3.5, fillAlpha: 0.018 }),
+  district: Object.freeze({ color: '#ff6000', width: 2.2, fillAlpha: 0.012 }),
   corregimiento: Object.freeze({
-    color: '#8bb2c1',
+    color: '#ff6000',
     width: 1.25,
     fillAlpha: 0.008,
   }),
