@@ -344,6 +344,7 @@
       "src/ui/layerPanel.js",
       "src/ui/clearLayersControl.js",
       "src/loadingFeedback.js",
+      "src/locationStatus.js",
       "src/data/installationFeedback.js"
     ],
     "external": []

@@ -1,4 +1,5 @@
 import { GUIDANCE_STATUSES } from '../loadingFeedback.js';
+import { formatCameraAltitude } from '../locationStatus.js';
 const FEED_STATE_LABELS = Object.freeze({
   nominal: 'ON',
   loading: 'LOADING',
@@ -323,6 +324,7 @@ export class LayerPanel {
     const feedState = layerFeedState(stats);
     const stateLabel = FEED_STATE_LABELS[feedState];
     const source = stats.source || layer.source;
+    const altitudeGuide = this._altitudeGuide(stats);
     const lifecycleState =
       layer.lifecycleState || (layer.enabled ? 'enabled' : 'disabled');
     if (lifecycleState === 'enabling' || lifecycleState === 'disabling') {
@@ -346,7 +348,7 @@ export class LayerPanel {
       typeof stats.statusMessage === 'string' &&
       stats.statusMessage.trim()
     ) {
-      return `${source} · ${stats.statusMessage.trim()}`;
+      return `${source} · ${stats.statusMessage.trim()}${altitudeGuide}`;
     }
     const ago = stats.lastUpdate ? this._timeAgo(stats.lastUpdate) : 'never';
     if (stats.loading) {
@@ -373,7 +375,17 @@ export class LayerPanel {
     if (typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()) {
       return `${source} · ${stats.loadingLabel.trim()}`;
     }
-    return `${source} · ${ago}`;
+    return `${source} · ${ago}${altitudeGuide}`;
+  }
+
+  _altitudeGuide(stats) {
+    const maximum = Number(stats.maxVisibleAltitudeM);
+    const current = Number(stats.cameraAltitudeM);
+    if (!Number.isFinite(maximum) || !Number.isFinite(current)) return '';
+    const difference = current - maximum;
+    if (difference > 0)
+      return ` · visible ≤ ${formatCameraAltitude(maximum)} · zoom in ${formatCameraAltitude(difference)}`;
+    return ` · visible ≤ ${formatCameraAltitude(maximum)} · ${formatCameraAltitude(-difference)} inside range`;
   }
 
   _syncToggleButton(button, layer) {

@@ -1,4 +1,4 @@
-import { STATUS_POLL_MS } from './policy.js';
+import { ACTIVATION_ALTITUDE_M, STATUS_POLL_MS } from './policy.js';
 
 export function createControls({ state: layerState, services, parts, source }) {
   const methods = {
@@ -30,6 +30,9 @@ export function createControls({ state: layerState, services, parts, source }) {
         count: layerState._count,
         lastUpdate: layerState._lastUpdate,
         loading: layerState._loading,
+        cameraAltitudeM:
+          layerState._viewer?.camera?.positionCartographic?.height,
+        maxVisibleAltitudeM: ACTIVATION_ALTITUDE_M,
       };
       if (layerState._loading) {
         stats.loadingLabel =

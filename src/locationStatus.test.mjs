@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addressSegments, locationMiniStatus } from './locationStatus.js';
+import { addressSegments, formatCameraAltitude, locationMiniStatus } from './locationStatus.js';
 
 const NEW_YORK = {
   name: 'New York',
@@ -72,4 +72,13 @@ test('a city record without a usable name is not treated as a preset', () => {
 test('address segments drop empties and surrounding whitespace', () => {
   assert.deepEqual(addressSegments(' Tokyo ,, Japan '), ['Tokyo', 'Japan']);
   assert.deepEqual(addressSegments(undefined), []);
+});
+
+test('camera altitude stays compact from street level through globe scale', () => {
+  assert.equal(formatCameraAltitude(undefined), '--');
+  assert.equal(formatCameraAltitude(-5), '0 m');
+  assert.equal(formatCameraAltitude(842), '842 m');
+  assert.equal(formatCameraAltitude(20_000), '20.0 km');
+  assert.equal(formatCameraAltitude(840_000), '840 km');
+  assert.equal(formatCameraAltitude(12_500_000), '12.50 Mm');
 });

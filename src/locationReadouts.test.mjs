@@ -47,7 +47,10 @@ test('a free-text search records its destination for the LOCATION mini-status', 
 
 test('the mini-status reads its copy from the shared formatter', () => {
   const controls = fs.readFileSync(path.join(ROOT, 'src', 'ui', 'locationControls.js'), 'utf8');
-  assert.match(controls, /import \{ locationMiniStatus \} from '\.\.\/locationStatus\.js';/);
+  assert.match(
+    controls,
+    /import \{ formatCameraAltitude, locationMiniStatus \} from '\.\.\/locationStatus\.js';/,
+  );
   assert.match(controls, /const lines = locationMiniStatus\(state\)/);
   const start = ui.indexOf('  _updateLocationMiniStatus() {');
   assert.ok(start > 0, '_updateLocationMiniStatus is missing');

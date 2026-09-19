@@ -168,6 +168,7 @@ export function readShellElements(document = globalThis.document) {
     _styleMiniValue: document.getElementById('style-mini-value'),
     _locationMiniCity: document.getElementById('location-mini-city'),
     _locationMiniPoi: document.getElementById('location-mini-poi'),
+    _locationAltitude: document.getElementById('location-altitude'),
     _safeFrameOverlay: document.getElementById('safe-frame-overlay'),
     _safeFrameBox: document.getElementById('safe-frame-box'),
     _detectionBtn: document.getElementById('detection-toggle'),

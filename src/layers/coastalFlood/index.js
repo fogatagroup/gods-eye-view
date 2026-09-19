@@ -20,6 +20,7 @@ const PANAMA_BOUNDS = Object.freeze({
   north: 9.8,
 });
 const MAX_VIEW_SPAN_DEGREES = 0.9;
+export const COASTAL_FLOOD_MAX_ALTITUDE_M = 50_000;
 const MOVE_DEBOUNCE_MS = 300;
 
 export function coastalFloodTooltipModel(depth) {
@@ -38,6 +39,9 @@ export function coastalFloodTooltipModel(depth) {
 }
 
 function viewportBounds(viewer) {
+  const altitude = Number(viewer?.camera?.positionCartographic?.height);
+  if (Number.isFinite(altitude) && altitude > COASTAL_FLOOD_MAX_ALTITUDE_M)
+    return { tooWide: true };
   const rectangle = viewer?.camera?.computeViewRectangle(
     viewer.scene.globe.ellipsoid,
   );
@@ -341,6 +345,8 @@ export function createCoastalFloodLayer({ source, services } = {}) {
         statusMessage: state.statusMessage,
         loading: state.loading,
         loadingLabel: state.loading ? 'loading MiAmbiente polygons' : '',
+        cameraAltitudeM: state.viewer?.camera?.positionCartographic?.height,
+        maxVisibleAltitudeM: COASTAL_FLOOD_MAX_ALTITUDE_M,
       };
     },
   };

@@ -1,4 +1,4 @@
-import { locationMiniStatus } from '../locationStatus.js';
+import { formatCameraAltitude, locationMiniStatus } from '../locationStatus.js';
 const POI_KEYS = ['Q', 'W', 'E', 'R', 'T'];
 
 /** Location DOM, keyboard handling and pending row animation over supplied actions. */
@@ -14,6 +14,7 @@ export class LocationControls {
     doc = document,
     requestFrame = (callback) => requestAnimationFrame(callback),
     cancelFrame = (id) => cancelAnimationFrame(id),
+    viewer = null,
   }) {
     Object.assign(this, {
       elements,
@@ -26,12 +27,15 @@ export class LocationControls {
       doc,
       requestFrame,
       cancelFrame,
+      viewer,
     });
     this.removers = [];
     this.poiRemovers = [];
     this.frame = null;
     this.destroyed = false;
     this.rowGeneration = 0;
+    this.lastAltitudeText = null;
+    this.altitudeRemover = null;
     elements.pills.replaceChildren();
     for (const [id, city] of Object.entries(cities)) {
       const pill = doc.createElement('button');
@@ -64,6 +68,11 @@ export class LocationControls {
     });
     for (const button of elements.resetButtons)
       this.bind(button, 'click', onReset);
+    this.updateAltitude();
+    if (viewer?.scene?.postRender?.addEventListener)
+      this.altitudeRemover = viewer.scene.postRender.addEventListener(() =>
+        this.updateAltitude(),
+      );
   }
   bind(element, event, handler, removers = this.removers) {
     if (!element) return;
@@ -136,6 +145,15 @@ export class LocationControls {
     this.elements.statusCity.textContent = lines.city;
     this.elements.statusPoi.textContent = lines.poi;
   }
+  updateAltitude() {
+    const element = this.elements.altitude;
+    if (this.destroyed || !element) return;
+    const text = `ALT ${formatCameraAltitude(this.viewer?.camera?.positionCartographic?.height)}`;
+    if (text === this.lastAltitudeText) return;
+    this.lastAltitudeText = text;
+    element.textContent = text;
+    element.title = 'Current camera height above the ellipsoid';
+  }
   createOrbitIndicator() {
     if (this.destroyed) return null;
     if (!this.orbitIndicator) {
@@ -153,6 +171,8 @@ export class LocationControls {
     if (this.destroyed) return;
     this.destroyed = true;
     this.cancelExpansion();
+    this.altitudeRemover?.();
+    this.altitudeRemover = null;
     for (const remove of [
       ...this.poiRemovers.splice(0),
       ...this.removers.splice(0),

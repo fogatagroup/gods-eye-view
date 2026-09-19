@@ -57,7 +57,7 @@ function node() {
     },
   };
 }
-function fixture() {
+function fixture({ viewer = null } = {}) {
   const elements = {
     pills: node(),
     poiRow: node(),
@@ -67,6 +67,7 @@ function fixture() {
     resetButtons: [node(), node()],
     statusCity: node(),
     statusPoi: node(),
+    altitude: node(),
   };
   const doc = node();
   doc.createElement = node;
@@ -94,9 +95,32 @@ function fixture() {
       return id;
     },
     cancelFrame: (id) => cancelled.push(id),
+    viewer,
   });
   return { elements, doc, controls, calls, frames, cancelled };
 }
+test('camera altitude is always rendered and its frame listener is released', () => {
+  let onFrame = null;
+  let removed = 0;
+  const viewer = {
+    camera: { positionCartographic: { height: 20_000 } },
+    scene: {
+      postRender: {
+        addEventListener(callback) {
+          onFrame = callback;
+          return () => removed++;
+        },
+      },
+    },
+  };
+  const f = fixture({ viewer });
+  assert.equal(f.elements.altitude.textContent, 'ALT 20.0 km');
+  viewer.camera.positionCartographic.height = 840_000;
+  onFrame();
+  assert.equal(f.elements.altitude.textContent, 'ALT 840 km');
+  f.controls.destroy();
+  assert.equal(removed, 1);
+});
 test('hiding a POI row cancels frame zero and rejects an already queued expansion', () => {
   const f = fixture();
   f.controls.showPois('a');

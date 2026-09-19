@@ -2925,6 +2925,7 @@ export class StyleManager {
         resetButtons: [this._resetGlobeBtn, this._cockpitResetGlobeBtn],
         statusCity: this._locationMiniCity,
         statusPoi: this._locationMiniPoi,
+        altitude: this._locationAltitude,
       },
       cities: CITY_POIS,
       getExpandedCity: () => this._expandedCityId,
@@ -2932,6 +2933,7 @@ export class StyleManager {
       onPoi: (id, index) => this._onPoiClick(id, index),
       onSearch: (query) => this._locationLookup.run(query),
       onReset: () => this.resetToGlobeView(),
+      viewer: this.viewer,
     });
   }
 

@@ -12,6 +12,17 @@
 
 const EMPTY = Object.freeze({ city: '📍 Location: --', poi: 'Landmark: --' });
 
+/** Compact camera-height copy shared by LOCATION and layer range guidance. */
+export function formatCameraAltitude(heightM) {
+  const height = Number(heightM);
+  if (!Number.isFinite(height)) return '--';
+  const safe = Math.max(0, height);
+  if (safe >= 1_000_000) return `${(safe / 1_000_000).toFixed(2)} Mm`;
+  if (safe >= 1_000)
+    return `${(safe / 1_000).toFixed(safe < 100_000 ? 1 : 0)} km`;
+  return `${Math.round(safe)} m`;
+}
+
 /** Split a geocoder `formatted_address` into its trimmed, non-empty segments. */
 export function addressSegments(label) {
   return String(label ?? '')

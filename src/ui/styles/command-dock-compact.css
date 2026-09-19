@@ -87,6 +87,14 @@
   white-space: nowrap;
 }
 
+#command-dock .location-altitude {
+  margin-left: auto;
+  padding-left: 0.4rem;
+  font-size: 0.47rem;
+  letter-spacing: 0.04rem;
+  color: rgba(54, 220, 255, 0.9);
+}
+
 #command-dock .panel-title::after,
 #command-dock .location-toolbar-label::after {
   content: '›';
