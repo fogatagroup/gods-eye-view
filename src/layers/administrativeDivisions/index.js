@@ -322,7 +322,6 @@ export function createAdministrativeDivisionsLayer({ source, services } = {}) {
     if (!hierarchy) return null;
     entity.polygon.outline = false;
     entity.polygon.classificationType = Cesium.ClassificationType.BOTH;
-    entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
     const boundary = hierarchyRings(hierarchy).map((positions, index) =>
       dataSource.entities.add({
         id: `${entity.id}:boundary:${index}`,
