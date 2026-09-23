@@ -128,6 +128,7 @@ test('terrain middleware migrates valid legacy disk points without fabricating o
 
 test('traffic middleware preserves keyless mode, caching, stale budget fallback and UTC rollover', async (t) => {
   isolate(t, {
+    MAPBOX_ACCESS_TOKEN: '',
     TOMTOM_API_KEY: '',
     TOMTOM_DAILY_TILE_BUDGET: '1',
     TOMTOM_REFERER: 'https://world.example.test/',
@@ -174,6 +175,32 @@ test('traffic middleware preserves keyless mode, caching, stale budget fallback 
     'MISS',
   );
   assert.equal(calls, 2);
+});
+
+test('traffic middleware prefers Mapbox tiles when its token is configured', async (t) => {
+  isolate(t, {
+    MAPBOX_ACCESS_TOKEN: 'mapbox-fixture',
+    MAPBOX_DAILY_TILE_BUDGET: '10',
+    MAPBOX_REFERER: 'https://world.example.test/',
+    TOMTOM_API_KEY: 'tomtom-fixture',
+  });
+  let calls = 0;
+  t.mock.method(globalThis, 'fetch', async (raw, options) => {
+    calls++;
+    const url = new URL(raw);
+    assert.equal(url.hostname, 'api.mapbox.com');
+    assert.equal(url.searchParams.get('access_token'), 'mapbox-fixture');
+    assert.equal(url.searchParams.has('key'), false);
+    assert.deepEqual(options.headers, {
+      Referer: 'https://world.example.test/',
+      Origin: 'https://world.example.test',
+    });
+    return new Response(new Uint8Array([1, 2, 3]));
+  });
+  const request = install(tomtomProxy());
+  assert.deepEqual(json(await request('/status')).provider, 'mapbox');
+  assert.equal((await request('/flow/12/1143/1945.pbf')).status, 200);
+  assert.equal(calls, 1);
 });
 
 test('FIRMS retains a large successful source during partial failure and filters stale data at serve time', async (t) => {

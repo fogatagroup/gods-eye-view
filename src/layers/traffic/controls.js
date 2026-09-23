@@ -148,6 +148,7 @@ export function createControls({ state: layerState, services, parts, source }) {
         flowError: layerState._flowError,
         coveragePct: layerState._flowCoveragePct,
         statusUnavailable: layerState._flowStatusUnavailable,
+        provider: layerState._flowProvider || 'tomtom',
       });
       return {
         count: layerState._count,

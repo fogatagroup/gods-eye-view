@@ -82,6 +82,10 @@ export function createState({ services }) {
 
   layerState._liveMode = false;
 
+  /** @type {'mapbox'|'tomtom'|null} Active live-flow provider. */
+
+  layerState._flowProvider = null;
+
   /**
    * Short user-facing reason live flow is currently unavailable, or null while
    * healthy. Only ever set in live mode: keyless simulation is a designed

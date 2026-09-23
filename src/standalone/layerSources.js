@@ -17,6 +17,7 @@ import { createBundledCableSource } from '../layers/submarineCables/bundledSourc
 import { createPanamaOfficialSource } from '../layers/panamaOfficial/source.js';
 import { createCoastalFloodSource } from '../layers/coastalFlood/source.js';
 import { createAdministrativeDivisionsSource } from '../layers/administrativeDivisions/source.js';
+import { createPopulatedPlacesSource } from '../layers/populatedPlaces/source.js';
 
 /** Existing reference feeds, usable independently of live source selection. */
 export function createStandaloneReferenceSources() {
@@ -52,6 +53,9 @@ export function createStandaloneLayerSources() {
     }),
     administrativeDivisions: createAdministrativeDivisionsSource({
       serviceUrl: import.meta.env?.VITE_ADMINISTRATIVE_DIVISIONS_SERVICE_URL,
+    }),
+    populatedPlaces: createPopulatedPlacesSource({
+      serviceUrl: import.meta.env?.VITE_POPULATED_PLACES_SERVICE_URL,
     }),
   };
 }

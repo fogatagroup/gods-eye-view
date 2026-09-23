@@ -23,12 +23,41 @@ import { VectorTile } from '@mapbox/vector-tile';
  */
 
 const FLOW_LAYER_NAME = 'Traffic flow';
+const MAPBOX_FLOW_LAYER_NAME = 'traffic';
+const MAPBOX_CONGESTION_LEVEL = Object.freeze({
+  low: 0.88,
+  moderate: 0.62,
+  heavy: 0.36,
+  severe: 0.12,
+});
+
+export function normalizeFlowProperties(props = {}) {
+  const closure =
+    props.road_closure === true ||
+    props.road_closure === 'true' ||
+    props.closed === true ||
+    props.closed === 'yes';
+  const rawLevel =
+    typeof props.traffic_level === 'number'
+      ? props.traffic_level
+      : MAPBOX_CONGESTION_LEVEL[props.congestion];
+  const hasLevel = typeof rawLevel === 'number' && Number.isFinite(rawLevel);
+  const trafficLevel = hasLevel ? Math.min(1, Math.max(0, rawLevel)) : 0;
+  const roadType =
+    typeof props.road_type === 'string'
+      ? props.road_type
+      : typeof props.class === 'string'
+        ? props.class
+        : '';
+  return { closure, hasLevel, trafficLevel, roadType };
+}
+
 export function decodeFlowTile(data, z, x, y) {
   let layer;
   try {
     const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
     const tile = new VectorTile(new PbfReader(bytes));
-    layer = tile.layers[FLOW_LAYER_NAME];
+    layer = tile.layers[FLOW_LAYER_NAME] || tile.layers[MAPBOX_FLOW_LAYER_NAME];
   } catch {
     return [];
   }
@@ -45,16 +74,11 @@ export function decodeFlowTile(data, z, x, y) {
       continue; // one malformed feature must not drop the tile
     }
     const props = feature.properties || {};
-    const closure =
-      props.road_closure === true || props.road_closure === 'true';
-    const rawLevel = props.traffic_level;
-    const hasLevel = typeof rawLevel === 'number' && Number.isFinite(rawLevel);
+    const { closure, hasLevel, trafficLevel, roadType } =
+      normalizeFlowProperties(props);
     // Skip features we can't color — unless closed (closures render dot-free
     // regardless of level, so they stay useful without one).
     if (!hasLevel && !closure) continue;
-    const trafficLevel = hasLevel ? Math.min(1, Math.max(0, rawLevel)) : 0;
-    const roadType = typeof props.road_type === 'string' ? props.road_type : '';
-
     const lines =
       geometry.type === 'LineString'
         ? [geometry.coordinates]

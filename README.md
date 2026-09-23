@@ -274,7 +274,7 @@ Thirteen layers and map sources. **Eleven have a keyless path.** Some offer addi
 | 🚢 **Live Vessels** | Thousands of ships worldwide | AISStream | 🟡 |
 | 🛰️ **Satellites** | 838-object catalog, color-coded by class with a live legend — the **DENSE** chip drops in the whole Starlink shell | CelesTrak | 🟢 |
 | 🌍 **Earthquakes** | Global seismic activity, last 24h | USGS | 🟢 |
-| 🚗 **Traffic** | Simulated vehicles on OSM roads. With TomTom, live flow speeds drive the simulation and congestion colors below ~8 km; individual vehicle positions are not live observations | TomTom + OSM | 🟢 simulation · 🟡 live flow speeds |
+| 🚗 **Traffic** | Simulated vehicles on OSM roads. With Mapbox (preferred) or TomTom, live congestion drives the simulation and colors below ~8 km; individual vehicle positions are not live observations | Mapbox/TomTom + OSM | 🟢 simulation · 🟡 live flow speeds |
 | 📹 **CCTV Mesh** | ~3,400 public cameras projected *into* the 3D space — Austin · Texas (TxDOT) · California (Caltrans) · London (TfL) · Ontario (511) · Finland (Fintraffic) · British Columbia (DriveBC) · Estonia (Tallinn, Tarktee) · New South Wales (Live Traffic NSW). Positions are published; poses are estimated priors **you calibrate by dragging a gizmo on the camera itself** | City APIs | 🟢 |
 | 📻 **Radio** | Geolocated world radio with an **analog tuner** — drag the needle across up to 750 stations and the globe flies to each broadcaster | Radio Browser / broadcasters | 🟢 |
 | 🚲 **Bikeshare** | Live station availability | GBFS | 🟢 |
@@ -386,11 +386,11 @@ Six keys. Four have a free tier, and the two 🔴 ones are metered:
 | 🔴 | **OpenAI** | 🎙️ The voice experience + AI HUD summary. The mini model works; the standard model is noticeably smarter. Want Gemini or another provider behind the mic? PRs welcome | [platform.openai.com](https://platform.openai.com) — metered, see costs below |
 | 🟡 | **AISStream** | 🚢 Live global ships | [aisstream.io](https://aisstream.io) — free signup |
 | 🟡 | **NASA FIRMS** | 🔥 Live active fires | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov/api/map_key/) — free |
-| 🟡 | **TomTom** | 🚦 Live flow speeds and congestion colors for the simulated traffic layer | [developer.tomtom.com](https://developer.tomtom.com) — free tier available |
+| 🟡 | **Mapbox or TomTom** | 🚦 Live congestion colors for the simulated traffic layer | [Mapbox Traffic](https://docs.mapbox.com/data/tilesets/reference/mapbox-traffic-v1/) or [TomTom](https://developer.tomtom.com) |
 
 ![Diving from city-scale live congestion straight into an intersection's public camera](docs/media/05-traffic-to-cctv.gif)
 
-*What the TomTom key buys you: rush-hour density painted on the city — then dive from the jam straight into the camera watching it.*
+*What a traffic-provider key buys you: rush-hour density painted on the city — then dive from the jam straight into the camera watching it.*
 
 ### Cherry on top
 

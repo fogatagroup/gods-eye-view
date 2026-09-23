@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   decodeFlowTile,
+  normalizeFlowProperties,
   fetchFlowForBounds,
   tilesForBounds,
   getFlowSessionStats,
@@ -64,6 +65,19 @@ test('fixture decode: segment shape is {coords, trafficLevel, roadType, closure}
 
 test('decode of a non-MVT buffer returns [] (defensive)', () => {
   assert.deepEqual(decodeFlowTile(Buffer.from('not a protobuf tile'), 12, 935, 1686), []);
+});
+
+test('Mapbox congestion classes normalize into the shared flow model', () => {
+  assert.deepEqual(normalizeFlowProperties({ class: 'primary', congestion: 'low' }), {
+    closure: false,
+    hasLevel: true,
+    trafficLevel: 0.88,
+    roadType: 'primary',
+  });
+  assert.equal(normalizeFlowProperties({ congestion: 'moderate' }).trafficLevel, 0.62);
+  assert.equal(normalizeFlowProperties({ congestion: 'heavy' }).trafficLevel, 0.36);
+  assert.equal(normalizeFlowProperties({ congestion: 'severe' }).trafficLevel, 0.12);
+  assert.equal(normalizeFlowProperties({ closed: 'yes' }).closure, true);
 });
 
 // ── tilesForBounds (re-exported slippy math) ────────────────

@@ -38,8 +38,9 @@ test('catalogs construct distinct layers and classification from their supplied 
     signal: b.signal,
     surface: fixtureSurface(b.signal),
   });
-  assert.equal(first.layers.length, 22);
+  assert.equal(first.layers.length, 23);
   assert.ok(first.get('administrative-divisions'));
+  assert.ok(first.get('populated-places'));
   assert.deepEqual(
     first.layers
       .filter(({ showInTogglePanel }) => showInTogglePanel === false)

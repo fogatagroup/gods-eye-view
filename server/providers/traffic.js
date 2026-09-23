@@ -51,8 +51,20 @@ export function tomtomProxy() {
   let budgetLoaded = false;
 
   function dailyBudgetLimit() {
-    const raw = Number.parseInt(process.env.TOMTOM_DAILY_TILE_BUDGET || '', 10);
-    return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DAILY_BUDGET;
+    const envName = process.env.MAPBOX_ACCESS_TOKEN
+      ? 'MAPBOX_DAILY_TILE_BUDGET'
+      : 'TOMTOM_DAILY_TILE_BUDGET';
+    const fallback = process.env.MAPBOX_ACCESS_TOKEN
+      ? 6000
+      : DEFAULT_DAILY_BUDGET;
+    const raw = Number.parseInt(process.env[envName] || '', 10);
+    return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+  }
+
+  function configuredProvider() {
+    if (process.env.MAPBOX_ACCESS_TOKEN) return 'mapbox';
+    if (process.env.TOMTOM_API_KEY) return 'tomtom';
+    return null;
   }
 
   async function loadBudgetOnce() {
@@ -130,12 +142,19 @@ export function tomtomProxy() {
     mem.set(key, entry);
   }
 
-  async function fetchUpstream(z, x, y) {
+  async function fetchUpstream(provider, z, x, y) {
     const url =
-      'https://api.tomtom.com/traffic/map/4/tile/flow/relative/' +
-      `${z}/${x}/${y}.pbf?key=${encodeURIComponent(process.env.TOMTOM_API_KEY)}`;
+      provider === 'mapbox'
+        ? 'https://api.mapbox.com/v4/mapbox.mapbox-traffic-v1/' +
+          `${z}/${x}/${y}.vector.pbf?access_token=${encodeURIComponent(process.env.MAPBOX_ACCESS_TOKEN)}`
+        : 'https://api.tomtom.com/traffic/map/4/tile/flow/relative/' +
+          `${z}/${x}/${y}.pbf?key=${encodeURIComponent(process.env.TOMTOM_API_KEY)}`;
     recordUpstreamFetch(); // attempts count — upstream bills the request either way
-    const configuredReferer = String(process.env.TOMTOM_REFERER || '').trim();
+    const configuredReferer = String(
+      provider === 'mapbox'
+        ? process.env.MAPBOX_REFERER || ''
+        : process.env.TOMTOM_REFERER || '',
+    ).trim();
     let headers;
     if (configuredReferer) {
       const referer = new URL(configuredReferer);
@@ -172,6 +191,7 @@ export function tomtomProxy() {
         res.writeHead(200, {
           'Content-Type': 'application/x-protobuf',
           'Cache-Control': 'no-store',
+          'x-traffic-cache': cacheStatus,
           'x-tomtom-cache': cacheStatus,
         });
         res.end(buf);
@@ -182,10 +202,12 @@ export function tomtomProxy() {
         const urlPath = String(req.url || '').split('?')[0];
 
         if (urlPath === '/status') {
-          const hasKey = Boolean(process.env.TOMTOM_API_KEY);
+          const provider = configuredProvider();
+          const hasKey = Boolean(provider);
           const b = currentBudget();
           sendJson(200, {
             hasKey,
+            provider,
             dailyCount: b.count,
             budget: dailyBudgetLimit(),
             date: b.date,
@@ -205,12 +227,13 @@ export function tomtomProxy() {
           sendJson(400, { error: 'invalid_tile' });
           return;
         }
-        if (!process.env.TOMTOM_API_KEY) {
+        const provider = configuredProvider();
+        if (!provider) {
           sendJson(503, { error: 'no_key' });
           return;
         }
 
-        const key = `${z}/${x}/${y}`;
+        const key = `${provider}/${z}/${x}/${y}`;
         const now = Date.now();
 
         let entry = mem.get(key);
@@ -238,7 +261,7 @@ export function tomtomProxy() {
         if (!inflight.has(key)) {
           inflight.set(
             key,
-            fetchUpstream(z, x, y)
+            fetchUpstream(provider, z, x, y)
               .then(async (buf) => {
                 const fresh = { at: Date.now(), buf };
                 memSet(key, fresh);

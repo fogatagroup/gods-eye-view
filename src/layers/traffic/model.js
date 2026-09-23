@@ -295,7 +295,9 @@ export function createModel({ state: layerState, services, parts, source }) {
     flowError = null,
     coveragePct = 0,
     statusUnavailable = false,
+    provider = 'tomtom',
   } = {}) {
+    const providerLabel = provider === 'mapbox' ? 'Mapbox' : 'TomTom';
     // `mode` is the CONFIGURED source (live key present vs keyless), not this
     // instant's health — health rides on `error`. The qa-traffic harness pins
     // that meaning.
@@ -314,7 +316,7 @@ export function createModel({ state: layerState, services, parts, source }) {
         error: null,
         loadingLabel: fetching
           ? 'syncing LIVE traffic flow'
-          : `LIVE · TomTom flow · ${coveragePct}% cov`,
+          : `LIVE · ${providerLabel} flow · ${coveragePct}% cov`,
       };
     }
     // Keyless simulation — one terse line that names the mode and the remedy
@@ -325,7 +327,7 @@ export function createModel({ state: layerState, services, parts, source }) {
       error: null,
       loadingLabel: statusUnavailable
         ? 'SIMULATED — traffic service unreachable'
-        : 'SIMULATED — add TomTom key for live',
+        : 'SIMULATED — add traffic provider key for live',
     };
   }
 

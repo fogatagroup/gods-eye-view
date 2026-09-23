@@ -47,8 +47,14 @@ test('keyless traffic names the mode and the remedy, loading or idle', () => {
   assert.equal(idle.error, null);
   assert.equal(loading.error, null);
   // One terse line in both states; the chip's progress text carries "working".
-  assert.equal(idle.loadingLabel, 'SIMULATED — add TomTom key for live');
-  assert.equal(loading.loadingLabel, 'SIMULATED — add TomTom key for live');
+  assert.equal(
+    idle.loadingLabel,
+    'SIMULATED — add traffic provider key for live',
+  );
+  assert.equal(
+    loading.loadingLabel,
+    'SIMULATED — add traffic provider key for live',
+  );
 });
 
 test('no keyless label ever implies a live feed', () => {
@@ -111,7 +117,7 @@ test('the rendered steady-state meta line carries the SIMULATED copy', () => {
       source: 'OpenStreetMap',
       stats: stats(trafficFeedPresentation({ liveMode: false })),
     }),
-    'FALLBACK · OpenStreetMap · SIMULATED — add TomTom key for live',
+    'FALLBACK · OpenStreetMap · SIMULATED — add traffic provider key for live',
   );
   assert.equal(
     mgr._buildMetaText({

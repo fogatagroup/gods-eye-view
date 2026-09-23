@@ -210,7 +210,7 @@ test('every layer the matrix can enable has an attribution expectation', () => {
   for (const id of ['flights', 'satellites', 'earthquakes', 'cctv', 'traffic',
     'ais-live-vessels', 'military-installations', 'local-datacenters', 'local-dams',
     'local-firms', 'telegeography-submarine-cables', 'coastal-flood-2050',
-    'administrative-divisions']) {
+    'administrative-divisions', 'populated-places']) {
     const expectation = requiredCreditFor(id);
     assert.ok(expectation?.regex, `${id} needs a credit expectation`);
   }

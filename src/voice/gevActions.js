@@ -196,6 +196,8 @@ const LAYER_ALIASES = new Map([
   ['administrative divisions', 'administrative-divisions'],
   ['political boundaries', 'administrative-divisions'],
   ['divisiones administrativas', 'administrative-divisions'],
+  ['populated places', 'populated-places'],
+  ['lugares poblados', 'populated-places'],
 ]);
 
 const CITY_ALIASES = new Map([
@@ -3211,6 +3213,7 @@ function layerTitle(layerId) {
   if (layerId === 'panama-official-tourism') return 'Panamá Oficial Place';
   if (layerId === 'coastal-flood-2050') return 'Coastal Flood Projection';
   if (layerId === 'administrative-divisions') return 'Administrative Division';
+  if (layerId === 'populated-places') return 'Populated Place';
   return layerId || 'Entity';
 }
 

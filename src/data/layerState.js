@@ -292,6 +292,7 @@ export const LAYER_STATE_REGISTRY = Object.freeze([
   Object.freeze({ id: 'panama-official-agencies', token: 'j', disposition: 'enabled-only' }),
   Object.freeze({ id: 'panama-official-hotels', token: 'h', disposition: 'enabled-only' }),
   Object.freeze({ id: 'panama-official-tourism', token: 'o', disposition: 'enabled-only' }),
+  Object.freeze({ id: 'populated-places', token: 'y', disposition: 'enabled-only' }),
   Object.freeze({ id: 'radio', token: 'r', disposition: 'enabled+options', optionOwner: 'radio' }),
   Object.freeze({ id: 'rocket-launches', token: 'x', disposition: 'enabled-only' }),
   Object.freeze({ id: 'satellites', token: 's', disposition: 'enabled+options', optionOwner: 'satellites' }),

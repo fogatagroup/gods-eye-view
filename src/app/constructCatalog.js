@@ -19,6 +19,7 @@ import { createApplicationCables } from './layers/submarineCables.js';
 import { createApplicationPanamaOfficial } from './layers/panamaOfficial.js';
 import { createApplicationCoastalFlood } from './layers/coastalFlood.js';
 import { createApplicationAdministrativeDivisions } from './layers/administrativeDivisions.js';
+import { createApplicationPopulatedPlaces } from './layers/populatedPlaces.js';
 import { createInfrastructureLayers } from '../data/infrastructure.js';
 import { localGeoJsonServices } from '../data/localGeojson.js';
 
@@ -46,6 +47,7 @@ const SOURCE_METHODS = Object.freeze({
   panamaOfficial: ['getPlaces'],
   coastalFlood: ['getFeatures'],
   administrativeDivisions: ['getFeatures'],
+  populatedPlaces: ['getFeatures'],
 });
 
 /** Construct the current catalog without choosing any source provider.
@@ -128,6 +130,7 @@ export function createApplicationCatalog({
         createApplicationAdministrativeDivisions({
           source: sources.administrativeDivisions,
         }),
+        createApplicationPopulatedPlaces({ source: sources.populatedPlaces }),
         createApplicationCoastalFlood({ source: sources.coastalFlood }),
         createApplicationCables({ source: sources.cables }),
         createApplicationFirms({

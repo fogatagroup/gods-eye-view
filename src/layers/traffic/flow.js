@@ -2,7 +2,8 @@ import { matchFlowToRoads } from '../../data/flowMatch.js';
 import { TRAFFIC_TIMING_ENABLED, FLOW_RENDER_RACE_MS } from './policy.js';
 
 export function createFlow({ state: layerState, services, parts, source }) {
-  const { registerDynamicCredit, TOMTOM_CREDIT } = services.credits;
+  const { registerDynamicCredit, TOMTOM_CREDIT, MAPBOX_CREDIT } =
+    services.credits;
   const { fetchFlowForBounds } = source;
 
   // ─── Live Flow (TomTom) ────────────────────────────────────
@@ -19,15 +20,18 @@ export function createFlow({ state: layerState, services, parts, source }) {
    * @returns {string|null} Short reason, or null for an aborted (superseded) fetch.
    */
 
-  function deriveTrafficFlowError(error) {
+  function deriveTrafficFlowError(error, provider = 'tomtom') {
     if (!error || error.name === 'AbortError') return null;
+    const providerLabel = provider === 'mapbox' ? 'Mapbox' : 'TomTom';
     const message = String(error.message || error);
     const status = Number(message.match(/HTTP (\d{3})/)?.[1]);
-    if (status === 503) return 'TomTom key unavailable';
-    if (status === 429) return 'TomTom daily budget reached';
-    if (status === 502 || status === 504) return 'TomTom upstream unreachable';
-    if (Number.isFinite(status)) return `TomTom flow error (HTTP ${status})`;
-    return 'TomTom flow unavailable';
+    if (status === 503) return `${providerLabel} key unavailable`;
+    if (status === 429) return `${providerLabel} daily budget reached`;
+    if (status === 502 || status === 504)
+      return `${providerLabel} upstream unreachable`;
+    if (Number.isFinite(status))
+      return `${providerLabel} flow error (HTTP ${status})`;
+    return `${providerLabel} flow unavailable`;
   }
 
   /**
@@ -45,10 +49,25 @@ export function createFlow({ state: layerState, services, parts, source }) {
         .getStatus()
         .then((status) => {
           layerState._liveMode = Boolean(status?.hasKey);
+          layerState._flowProvider =
+            status?.provider === 'mapbox'
+              ? 'mapbox'
+              : status?.provider === 'tomtom'
+                ? 'tomtom'
+                : null;
           layerState._flowStatusUnavailable = false;
           if (layerState._liveMode) {
-            console.log('[Data:Traffic] TomTom key present — live flow mode');
-            registerDynamicCredit(layerState._viewer, TOMTOM_CREDIT);
+            const providerLabel =
+              layerState._flowProvider === 'mapbox' ? 'Mapbox' : 'TomTom';
+            console.log(
+              `[Data:Traffic] ${providerLabel} key present — live flow mode`,
+            );
+            registerDynamicCredit(
+              layerState._viewer,
+              layerState._flowProvider === 'mapbox'
+                ? MAPBOX_CREDIT
+                : TOMTOM_CREDIT,
+            );
           }
         })
         .catch((e) => {
@@ -123,7 +142,10 @@ export function createFlow({ state: layerState, services, parts, source }) {
           return;
         // Every covering tile failed: there is no live flow on screen. Drop the
         // now-false coverage number and surface the reason through getStats().
-        layerState._flowError = deriveTrafficFlowError(e);
+        layerState._flowError = deriveTrafficFlowError(
+          e,
+          layerState._flowProvider || 'tomtom',
+        );
         layerState._flowCoveragePct = 0;
         console.warn(
           '[Data:Traffic] Flow fetch failed (sim colors remain):',

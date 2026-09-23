@@ -179,6 +179,7 @@ const CREDIT_EXPECTATIONS = {
   'telegeography-submarine-cables': /TeleGeography/i,
   'coastal-flood-2050': /MIAMBIENTE PANAMÁ/i,
   'administrative-divisions': /MIAMBIENTE PANAMÁ/i,
+  'populated-places': /MIAMBIENTE PANAMÁ/i,
   'local-neighborhoods': /DataSF|San Francisco/i,
   'weather-effects': /Open-Meteo/i,
 };

@@ -47,6 +47,12 @@ export const DATA_CREDITS = [
       '<a href="https://geoportal.miambiente.gob.pa/server/rest/services/Nodo_Caracteristica_General/MapServer" target="_blank" rel="noopener">MIAMBIENTE PANAMÁ</a>',
   },
   {
+    key: 'miambiente-populated-places-2010',
+    html:
+      'Populated Places (2010 census data): ' +
+      '<a href="https://geoportal.miambiente.gob.pa/server/rest/services/Nodo_Caracteristica_General/MapServer/2" target="_blank" rel="noopener">MIAMBIENTE PANAMÁ</a>',
+  },
+  {
     key: 'opensky',
     html:
       'Flights: OpenSky Network — Schäfer et al., ' +
@@ -279,6 +285,14 @@ export const TOMTOM_CREDIT = {
   html:
     'Traffic flow data © ' +
     '<a href="https://www.tomtom.com" target="_blank" rel="noopener">TomTom</a>',
+};
+
+export const MAPBOX_CREDIT = {
+  key: 'mapbox-traffic',
+  html:
+    'Traffic flow data © ' +
+    '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">Mapbox</a> ' +
+    '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
 };
 
 /** Registered when the first Natural Earth region outline resolves (public
